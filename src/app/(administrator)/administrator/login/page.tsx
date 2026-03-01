@@ -1,9 +1,12 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useAdmin } from "@/hooks/useAdmin";
+import { useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
-  const router = useRouter();
+function LoginForm() {
+  const { login, loading, error: apiError, setError: setApiError } = useAdmin();
+  const searchParams = useSearchParams();
+  const sessionExpired = searchParams.get("reason") === "expired";
   const [captchaText, setCaptchaText] = useState("");
   const [captchaInput, setCaptchaInput] = useState("");
   const [username, setUsername] = useState("");
@@ -23,7 +26,7 @@ export default function LoginPage() {
     setCaptchaText(text);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (captchaInput !== captchaText) {
       setError("Captcha salah, silakan coba lagi.");
@@ -31,10 +34,14 @@ export default function LoginPage() {
       setCaptchaInput("");
       return;
     }
-    
-    // Simulate login success
-    router.push("/administrator/dashboard");
+    setError("");
+    setApiError(null);
+    await login(username, password);
   };
+
+  // Sync API errors into the local error display
+  const displayError = error || apiError || "";
+
 
   return (
     <div
@@ -100,7 +107,27 @@ export default function LoginPage() {
           }} />
         </div>
 
-        {error && (
+        {sessionExpired && !displayError && (
+          <div
+            style={{
+              background: "#FEF3C7",
+              borderLeft: "4px solid #D97706",
+              color: "#92400E",
+              padding: "0.75rem 1rem",
+              borderRadius: "4px",
+              marginBottom: "1.5rem",
+              fontSize: "0.9rem",
+              fontFamily: "var(--font-body)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}
+          >
+            🔒 Sesi Anda telah berakhir. Silakan login kembali.
+          </div>
+        )}
+
+        {displayError && (
           <div
             style={{
               background: "#FEF2F2",
@@ -113,7 +140,7 @@ export default function LoginPage() {
               fontFamily: "var(--font-body)"
             }}
           >
-            {error}
+            {displayError}
           </div>
         )}
 
@@ -268,6 +295,7 @@ export default function LoginPage() {
 
           <button 
             type="submit" 
+            disabled={loading}
             className="btn btn-primary" 
             style={{ 
               width: "100%", 
@@ -276,10 +304,12 @@ export default function LoginPage() {
               fontSize: "1rem",
               fontWeight: 600,
               borderRadius: "8px",
-              boxShadow: "0 4px 14px rgba(15, 118, 110, 0.3)"
+              boxShadow: "0 4px 14px rgba(15, 118, 110, 0.3)",
+              opacity: loading ? 0.7 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
             }}
           >
-            Masuk ke Dasbor
+            {loading ? "Memverifikasi..." : "Masuk ke Dasbor"}
           </button>
         </form>
         
@@ -297,5 +327,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

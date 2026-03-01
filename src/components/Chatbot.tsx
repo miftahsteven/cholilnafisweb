@@ -65,7 +65,8 @@ export default function Chatbot() {
   }, []);
 
   useEffect(() => {
-    if (messagesEndRef.current) {
+    // Hanya auto-scroll jika ada lebih dari 1 pesan (pesan sapaan tidak memicu scroll on load) atau bot sedang mengetik
+    if (messagesEndRef.current && (messages.length > 1 || isTyping)) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isTyping]);

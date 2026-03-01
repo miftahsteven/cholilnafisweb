@@ -4,7 +4,7 @@ import Chatbot from "@/components/Chatbot";
 import Gallery from "@/components/Gallery";
 import Opinions from "@/components/Opinions";
 import FAQ from "@/components/FAQ";
-
+import BeritaSection from "@/components/BeritaSection";
 export default function PublicPage() {
   return (
     <>
@@ -54,7 +54,19 @@ export default function PublicPage() {
 
         <div className="profile-content">
           <div className="profile-image-wrap">
-            <div className="profile-photo">Foto Portret (Placeholder)</div>
+            <div className="profile-photo">
+              <Image
+                src="/assets/images/profil3.jpeg"
+                alt="KH. Muhammad Cholil Nafis"
+                width={400}
+                height={500}
+                style={{ 
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                 }}
+              />
+            </div>
             <div className="profile-decor"></div>
           </div>
           <div className="profile-bio">
@@ -95,79 +107,7 @@ export default function PublicPage() {
       </section>
 
       {/* Berita Section */}
-      <section id="berita" style={{ backgroundColor: "var(--white)" }}>
-        <div className="container">
-          <div className="text-center">
-            <h2 className="section-title">Kabar & Berita</h2>
-            <p className="section-subtitle">
-              Update terbaru liputan aktivitas, pernyataan publik, dan rangkuman
-              kegiatan dakwah.
-            </p>
-          </div>
-
-          <div className="berita-grid">
-            {/* Card 1 */}
-            <article className="news-card">
-              <div className="news-thumb">Thumbnail Berita (600x400)</div>
-              <div className="news-content">
-                <span className="news-date">12 Oktober 2023</span>
-                <h3 className="news-title">
-                  <a href="#">
-                    Menjaga Kesatuan Umat di Tahun Politik Menurut Pandangan Islam
-                  </a>
-                </h3>
-                <p className="news-excerpt">
-                  Pesan penting mengenai ukhuwah islamiyah dan wathaniyah dalam
-                  mengantisipasi dinamika sosial politik jelang pemilu menurut
-                  kacamata ulama.
-                </p>
-                <a href="#" className="news-readmore">
-                  Baca Selengkapnya
-                </a>
-              </div>
-            </article>
-
-            {/* Card 2 */}
-            <article className="news-card">
-              <div className="news-thumb">Thumbnail Berita (600x400)</div>
-              <div className="news-content">
-                <span className="news-date">05 September 2023</span>
-                <h3 className="news-title">
-                  <a href="#">
-                    Peran Ekonomi Syariah dalam Pemulihan Ketahanan Nasional
-                  </a>
-                </h3>
-                <p className="news-excerpt">
-                  Dalam forum seminar nasional, dipaparkan bagaimana instrumen
-                  keuangan syariah seperti zakat dan wakaf dapat memperkuat fondasi
-                  ekonomi mikro.
-                </p>
-                <a href="#" className="news-readmore">
-                  Baca Selengkapnya
-                </a>
-              </div>
-            </article>
-
-            {/* Card 3 */}
-            <article className="news-card">
-              <div className="news-thumb">Thumbnail Berita (600x400)</div>
-              <div className="news-content">
-                <span className="news-date">28 Agustus 2023</span>
-                <h3 className="news-title">
-                  <a href="#">Hadir Sebagai Pembicara Utama Islamic Finance Summit</a>
-                </h3>
-                <p className="news-excerpt">
-                  Tinjauan kritis dan solutif terhadap tantangan perbankan syariah
-                  di era digitalisasi keuangan global dan inovasi fintech syariah.
-                </p>
-                <a href="#" className="news-readmore">
-                  Baca Selengkapnya
-                </a>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
+      <BeritaSection />
 
       {/* Konsultasi Section */}
       <section id="konsultasi" className="container">

@@ -1,0 +1,260 @@
+// Prisma schema for Global CMS — cholilnafis.id
+// Run: npx prisma generate --schema=backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────
+// USERS & ROLES
+// ──────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+  MODERATOR
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  username     String?    @unique
+  email        String     @unique
+  image        String?
+  passwordHash String?
+  role         Role       @default(EDITOR)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  posts        Post[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+// ──────────────────────────────────────
+// POSTS (BERITA & ARTIKEL)
+// ──────────────────────────────────────
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Post {
+  id          String       @id @default(cuid())
+  title       String
+  slug        String       @unique
+  content     String       @db.Text
+  excerpt     String?
+  coverImage  String?
+  status      PostStatus   @default(DRAFT)
+  publishedAt DateTime?
+  seoTitle    String?
+  seoDesc     String?
+  schemaJson  Json?
+  author      User         @relation(fields: [authorId], references: [id])
+  authorId    String
+  categories  PostCategory[]
+  tags        PostTag[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("posts")
+}
+
+model Category {
+  id    String         @id @default(cuid())
+  name  String         @unique
+  slug  String         @unique
+  posts PostCategory[]
+
+  @@map("categories")
+}
+
+model PostCategory {
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId     String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+
+  @@id([postId, categoryId])
+  @@map("post_categories")
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  posts PostTag[]
+
+  @@map("tags")
+}
+
+model PostTag {
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId  String
+
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
+
+// ──────────────────────────────────────
+// PAGES & BLOCKS (MODULAR CONTENT)
+// ──────────────────────────────────────
+
+model Page {
+  id        String  @id @default(cuid())
+  slug      String  @unique  // "home", "about", "gallery"
+  title     String
+  published Boolean @default(false)
+  blocks    Block[]
+
+  @@map("pages")
+}
+
+model Block {
+  id       String  @id @default(cuid())
+  type     String  // "hero" | "about" | "gallery" | "opinions" | "chatbot" | "footer"
+  order    Int
+  active   Boolean @default(true)
+  content  Json    // flexible content per block type
+  page     Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  pageId   String
+
+  @@map("blocks")
+}
+
+// ──────────────────────────────────────
+// MEDIA (FILE MANAGER)
+// ──────────────────────────────────────
+
+model Media {
+  id            String   @id @default(cuid())
+  filename      String
+  url           String
+  type          String   // "image" | "video" | "pdf" | "file"
+  size          Int
+  mimeType      String
+  alt           String?
+  showInGallery Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@map("media")
+}
+
+// ──────────────────────────────────────
+// AI CHATBOT
+// ──────────────────────────────────────
+
+model ChatLog {
+  id        String   @id @default(cuid())
+  sessionId String
+  question  String   @db.Text
+  answer    String   @db.Text
+  intent    String?
+  ipHash    String?
+  tokens    Int?
+  createdAt DateTime @default(now())
+
+  @@map("chat_logs")
+}
+
+model KnowledgeBase {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  source    String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("knowledge_base")
+}
+
+// ──────────────────────────────────────
+// KARYA ILMIAH / OPINI
+// ──────────────────────────────────────
+
+enum WorkType {
+  BUKU
+  JURNAL
+  ARTIKEL
+  KARYA_DIGITAL
+}
+
+model Work {
+  id         String   @id @default(cuid())
+  title      String
+  type       WorkType
+  content    String?  @db.Text
+  fileUrl    String?
+  repoUrl    String?
+  doi        String?
+  publisher  String?
+  year       Int?
+  references String?  @db.Text
+  published  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("works")
+}
+
+// ──────────────────────────────────────
+// GALERI
+// ──────────────────────────────────────
+
+enum GalleryItemType {
+  IMAGE
+  VIDEO_YOUTUBE
+}
+
+model GalleryItem {
+  id        String          @id @default(cuid())
+  type      GalleryItemType
+  title     String?
+  url       String          // image URL or YouTube video ID
+  order     Int             @default(0)
+  active    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+
+  @@map("gallery_items")
+}
+
+// ──────────────────────────────────────
+// AUDIT LOG
+// ──────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // "CREATE" | "UPDATE" | "DELETE" | "LOGIN"
+  entity    String   // "Post" | "Block" | "User"
+  entityId  String?
+  metadata  Json?
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+// ──────────────────────────────────────
+// SETTINGS (global config: footer, social, etc.)
+// ──────────────────────────────────────
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique  // "footer_address" | "social_media" | "site_title"
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
