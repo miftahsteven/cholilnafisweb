@@ -52,7 +52,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     method,
     headers,
     ...(finalBody ? { body: finalBody } : {}),
-    cache: method === 'GET' ? 'no-store' : undefined,
+    //cache: method === 'GET' ? 'no-store' : undefined,
+    next: method === 'GET' ? { revalidate: 120 } : undefined,
   });
 
   // 401 = token expired or invalid → signal layout to handle logout
