@@ -61,8 +61,8 @@ export default function GaleriPage() {
       {/* Header */}
       <div
         style={{
-          background: "linear-gradient(135deg, #2d1b69, #7c3aed)",
-          padding: "3rem 2rem 2rem",
+          background: "linear-gradient(135deg, #115e59, #0f766e)",
+          padding: "6rem 2rem 2rem",
           textAlign: "center",
         }}
       >

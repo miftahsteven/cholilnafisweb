@@ -2,21 +2,21 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+      setScrolled(window.scrollY > 50);
 
-      // Check active section
+      // Check active section (only meaningful on homepage)
       const sections = document.querySelectorAll("section");
       let current = "";
       sections.forEach((section) => {
@@ -30,15 +30,29 @@ export default function Navbar() {
     };
 
     window.addEventListener("scroll", handleScroll);
-    handleScroll(); // initial check
-
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // On sub-pages, always treat navbar as "scrolled" so it shows solid bg + dark text
+  const isScrolledStyle = scrolled || !isHome;
+
+  // Build href: on homepage use #hash, on sub-pages use /#hash
+  const navHref = (hash: string) => (isHome ? `#${hash}` : `/#${hash}`);
+
+  const NAV_LINKS = [
+    { id: "profil",     label: "Profil" },
+    { id: "berita",     label: "Berita" },
+    { id: "konsultasi", label: "Konsultasi" },
+    { id: "galeri",     label: "Galeri" },
+    { id: "opini",      label: "Opini" },
+    { id: "ekonomi",    label: "Ekonomi Syariah" },
+  ];
+
   return (
     <header
-      className={`navbar ${scrolled ? "scrolled" : ""} ${
-        menuOpen && !scrolled ? "menu-open" : ""
+      className={`navbar ${isScrolledStyle ? "scrolled" : ""} ${
+        menuOpen && !isScrolledStyle ? "menu-open" : ""
       }`}
       id="navbar"
     >
@@ -58,48 +72,16 @@ export default function Navbar() {
         </button>
 
         <nav className={`nav-links ${menuOpen ? "active" : ""}`}>
-          <a
-            href="#profil"
-            className={activeSection === "profil" ? "active" : ""}
-            onClick={() => setMenuOpen(false)}
-          >
-            Profil
-          </a>
-          <a
-            href="#berita"
-            className={activeSection === "berita" ? "active" : ""}
-            onClick={() => setMenuOpen(false)}
-          >
-            Berita
-          </a>
-          <a
-            href="#konsultasi"
-            className={activeSection === "konsultasi" ? "active" : ""}
-            onClick={() => setMenuOpen(false)}
-          >
-            Konsultasi
-          </a>
-          <a
-            href="#galeri"
-            className={activeSection === "galeri" ? "active" : ""}
-            onClick={() => setMenuOpen(false)}
-          >
-            Galeri
-          </a>
-          <a
-            href="#opini"
-            className={activeSection === "opini" ? "active" : ""}
-            onClick={() => setMenuOpen(false)}
-          >
-            Opini
-          </a>
-          <a
-            href="#ekonomi"
-            className={activeSection === "ekonomi" ? "active" : ""}
-            onClick={() => setMenuOpen(false)}
-          >
-            Ekonomi Syariah
-          </a>
+          {NAV_LINKS.map(({ id, label }) => (
+            <a
+              key={id}
+              href={navHref(id)}
+              className={isHome && activeSection === id ? "active" : ""}
+              onClick={() => setMenuOpen(false)}
+            >
+              {label}
+            </a>
+          ))}
         </nav>
       </div>
     </header>
