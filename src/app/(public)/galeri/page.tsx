@@ -66,7 +66,7 @@ export default function GaleriPage() {
           textAlign: "center",
         }}
       >
-        <a
+        {/* <a
           href="/#galeri"
           style={{
             display: "inline-block",
@@ -77,9 +77,9 @@ export default function GaleriPage() {
           }}
         >
           ← Kembali ke Beranda
-        </a>
+        </a> */}
         <h1 style={{ color: "#fff", fontSize: "2rem", fontWeight: 700, margin: 0 }}>
-          🖼️ Galeri Dokumentasi
+          Galeri Dokumentasi
         </h1>
         <p style={{ color: "rgba(255,255,255,0.75)", marginTop: "0.5rem", fontSize: "0.95rem" }}>
           Kumpulan foto dan video dokumentasi kegiatan KH. Muhammad Cholil Nafis
