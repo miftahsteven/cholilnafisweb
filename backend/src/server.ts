@@ -17,11 +17,12 @@ import { settingsRoutes } from './routes/settings.route';
 import { chatbotRoutes } from './routes/chatbot.route';
 import { worksRoutes } from './routes/works.route';
 import { authRoutes } from './routes/auth.route';
+import { karyaRoutes } from './routes/karya.route';
 import { prisma } from './lib/prisma';
 
 const server = Fastify({ logger: true });
 
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',');
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3002').split(',');
 const PORT = Number(process.env.PORT) || 4000;
 
 async function bootstrap() {
@@ -71,6 +72,7 @@ async function bootstrap() {
   await server.register(chatbotRoutes, { prefix: '/api/chatbot' });
   await server.register(worksRoutes, { prefix: '/api/works' });
   await server.register(authRoutes, { prefix: '/api/auth' });
+  await server.register(karyaRoutes, { prefix: '/api/karya' });
 
   // ── Health check ───────────────────────────
   server.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));

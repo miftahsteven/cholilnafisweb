@@ -94,6 +94,11 @@ export default async function BeritaSection() {
             </div>
           )}
         </div>
+        <div className="text-center" style={{ marginTop: "2rem" }}>
+          <Link href="/berita" style={{ color: "var(--primary)", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "4px" }}>
+            Lihat Semua Berita &rarr;
+          </Link>
+        </div>
       </div>
     </section>
   );

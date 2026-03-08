@@ -99,6 +99,14 @@ export const apiClient = {
   updateWork: (id: string, data: any, token: string) => request<any>(`/api/works/${id}`, { method: 'PATCH', body: data, token }),
   deleteWork: (id: string, token: string) => request<any>(`/api/works/${id}`, { method: 'DELETE', token }),
 
+  // Karya
+  getKaryasPublik: () => request<any>('/api/karya'),
+  getKaryasAdmin: (token: string) => request<any>('/api/karya/admin/all', { token }),
+  getKarya: (id: string) => request<any>(`/api/karya/${id}`),
+  createKarya: (data: any, token: string) => request<any>('/api/karya', { method: 'POST', body: data, token }),
+  updateKarya: (id: string, data: any, token: string) => request<any>(`/api/karya/${id}`, { method: 'PATCH', body: data, token }),
+  deleteKarya: (id: string, token: string) => request<any>(`/api/karya/${id}`, { method: 'DELETE', token }),
+
   // Chatbot
   ask: (question: string, sessionId?: string) => request<any>('/api/chatbot/ask', {
     method: 'POST',
@@ -113,6 +121,12 @@ export const apiClient = {
     return request<any>('/api/media/upload', { method: 'POST', body: formData, token });
   },
   uploadMediaUrl: (url: string, token: string) => request<any>('/api/media/upload-url', { method: 'POST', body: { url }, token }),
+  uploadPdf: (file: File, token: string) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return request<any>('/api/media/upload-pdf', { method: 'POST', body: formData, token });
+  },
+  uploadPdfUrl: (url: string, token: string) => request<any>('/api/media/upload-pdf-url', { method: 'POST', body: { url }, token }),
   registerMedia: (data: any, token: string) => request<any>('/api/media/register', { method: 'POST', body: data, token }),
   deleteMedia: (id: string, token: string) => request<any>(`/api/media/${id}`, { method: 'DELETE', token }),
   toggleMediaGallery: (id: string, showInGallery: boolean, token: string) =>

@@ -496,6 +496,8 @@ section {
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
+  position: relative;
+  overflow: hidden;
 }
 
 .news-content {

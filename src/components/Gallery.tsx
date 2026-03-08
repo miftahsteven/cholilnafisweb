@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import React, { useState, useEffect } from "react";
 
 interface GalleryMedia {
@@ -117,26 +118,13 @@ export default function Gallery() {
         </div>
       )}
 
-      {/* Lihat Semua button — only on foto tab when not empty */}
-      {activeTab === "foto" && !loading && photos.length > 0 && (
-        <div style={{ textAlign: "center", marginTop: "2rem" }}>
-          <a
-            href="/galeri"
-            style={{
-              display: "inline-block",
-              padding: "0.7rem 2rem",
-              borderRadius: "10px",
-              background: "linear-gradient(135deg, #7c3aed, #4f46e5)",
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: "0.95rem",
-              textDecoration: "none",
-              boxShadow: "0 4px 14px rgba(124,58,237,0.3)",
-            }}
-          >
-            Lihat Semua Galeri →
-          </a>
-        </div>
+      {/* Lihat Semua button */}
+      {!loading && ((activeTab === "foto" && photos.length > 0) || (activeTab === "video" && videos.length > 0)) && (
+        <div style={{ textAlign: "center", marginTop: "3rem" }}>
+          <Link href="/galeri" style={{ color: "var(--primary)", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "4px" }}>
+            Lihat Semua Galeri &rarr;
+          </Link> 
+        </div>    
       )}
 
       {activeTab === "video" && (
@@ -150,32 +138,62 @@ export default function Gallery() {
               Belum ada video di galeri.
             </div>
           ) : (
-            <div className="grid grid-2">
-              {videos.map((v) => (
+            <div className="gallery-grid">
+              {videos.slice(0, 6).map((v) => (
                 <a
                   key={v.id}
                   href={v.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="video-card"
-                  style={{ textDecoration: "none", display: "block" }}
+                  className="gallery-item"
+                  style={{ textDecoration: "none", display: "block", overflow: "hidden", position: "relative" }}
                 >
                   {v.alt ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={v.alt}
                       alt={v.filename}
-                      className="video-placeholder"
                       style={{
                         width: "100%",
+                        height: "100%",
                         objectFit: "cover",
-                        borderRadius: "8px",
+                        display: "block",
                       }}
                     />
                   ) : (
-                    <div className="video-placeholder">▶ Video</div>
+                    <div
+                      className="video-placeholder"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "#0f172a",
+                        color: "#fff",
+                      }}
+                    >
+                      ▶ Video
+                    </div>
                   )}
-                  <h4 className="video-title">{v.filename}</h4>
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      background: "rgba(0,0,0,0.7)",
+                      color: "#fff",
+                      padding: "0.5rem",
+                      fontSize: "0.85rem",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      textAlign: "center"
+                    }}
+                  >
+                    ▶ {v.filename}
+                  </div>
                 </a>
               ))}
             </div>

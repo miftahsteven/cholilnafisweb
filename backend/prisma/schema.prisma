@@ -1,6 +1,3 @@
-// Prisma schema for Global CMS — cholilnafis.id
-// Run: npx prisma generate --schema=backend/prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,17 +5,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-// ──────────────────────────────────────
-// USERS & ROLES
-// ──────────────────────────────────────
-
-enum Role {
-  SUPER_ADMIN
-  ADMIN
-  EDITOR
-  MODERATOR
 }
 
 model User {
@@ -31,40 +17,30 @@ model User {
   role         Role       @default(EDITOR)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
-  posts        Post[]
   auditLogs    AuditLog[]
+  posts        Post[]
 
   @@map("users")
 }
 
-// ──────────────────────────────────────
-// POSTS (BERITA & ARTIKEL)
-// ──────────────────────────────────────
-
-enum PostStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-
 model Post {
-  id          String       @id @default(cuid())
+  id          String         @id @default(cuid())
   title       String
-  slug        String       @unique
-  content     String       @db.Text
+  slug        String         @unique
+  content     String
   excerpt     String?
   coverImage  String?
-  status      PostStatus   @default(DRAFT)
+  status      PostStatus     @default(DRAFT)
   publishedAt DateTime?
   seoTitle    String?
   seoDesc     String?
   schemaJson  Json?
-  author      User         @relation(fields: [authorId], references: [id])
   authorId    String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   categories  PostCategory[]
   tags        PostTag[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  author      User           @relation(fields: [authorId], references: [id])
 
   @@map("posts")
 }
@@ -79,10 +55,10 @@ model Category {
 }
 
 model PostCategory {
-  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId     String
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([postId, categoryId])
   @@map("post_categories")
@@ -97,22 +73,18 @@ model Tag {
 }
 
 model PostTag {
-  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId String
-  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
   tagId  String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([postId, tagId])
   @@map("post_tags")
 }
 
-// ──────────────────────────────────────
-// PAGES & BLOCKS (MODULAR CONTENT)
-// ──────────────────────────────────────
-
 model Page {
   id        String  @id @default(cuid())
-  slug      String  @unique  // "home", "about", "gallery"
+  slug      String  @unique
   title     String
   published Boolean @default(false)
   blocks    Block[]
@@ -121,44 +93,36 @@ model Page {
 }
 
 model Block {
-  id       String  @id @default(cuid())
-  type     String  // "hero" | "about" | "gallery" | "opinions" | "chatbot" | "footer"
-  order    Int
-  active   Boolean @default(true)
-  content  Json    // flexible content per block type
-  page     Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  pageId   String
+  id      String  @id @default(cuid())
+  type    String
+  order   Int
+  active  Boolean @default(true)
+  content Json
+  pageId  String
+  page    Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
   @@map("blocks")
 }
-
-// ──────────────────────────────────────
-// MEDIA (FILE MANAGER)
-// ──────────────────────────────────────
 
 model Media {
   id            String   @id @default(cuid())
   filename      String
   url           String
-  type          String   // "image" | "video" | "pdf" | "file"
+  type          String
   size          Int
   mimeType      String
   alt           String?
-  showInGallery Boolean  @default(false)
   createdAt     DateTime @default(now())
+  showInGallery Boolean  @default(false)
 
   @@map("media")
 }
 
-// ──────────────────────────────────────
-// AI CHATBOT
-// ──────────────────────────────────────
-
 model ChatLog {
   id        String   @id @default(cuid())
   sessionId String
-  question  String   @db.Text
-  answer    String   @db.Text
+  question  String
+  answer    String
   intent    String?
   ipHash    String?
   tokens    Int?
@@ -170,7 +134,7 @@ model ChatLog {
 model KnowledgeBase {
   id        String   @id @default(cuid())
   title     String
-  content   String   @db.Text
+  content   String
   source    String?
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -179,9 +143,70 @@ model KnowledgeBase {
   @@map("knowledge_base")
 }
 
-// ──────────────────────────────────────
-// KARYA ILMIAH / OPINI
-// ──────────────────────────────────────
+model Work {
+  id         String   @id @default(cuid())
+  title      String
+  type       WorkType
+  content    String?
+  fileUrl    String?
+  repoUrl    String?
+  doi        String?
+  publisher  String?
+  year       Int?
+  references String?
+  published  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("works")
+}
+
+model GalleryItem {
+  id        String          @id @default(cuid())
+  type      GalleryItemType
+  title     String?
+  url       String
+  order     Int             @default(0)
+  active    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+
+  @@map("gallery_items")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+  MODERATOR
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
 
 enum WorkType {
   BUKU
@@ -190,71 +215,31 @@ enum WorkType {
   KARYA_DIGITAL
 }
 
-model Work {
-  id         String   @id @default(cuid())
-  title      String
-  type       WorkType
-  content    String?  @db.Text
-  fileUrl    String?
-  repoUrl    String?
-  doi        String?
-  publisher  String?
-  year       Int?
-  references String?  @db.Text
-  published  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@map("works")
-}
-
-// ──────────────────────────────────────
-// GALERI
-// ──────────────────────────────────────
-
 enum GalleryItemType {
   IMAGE
   VIDEO_YOUTUBE
 }
 
-model GalleryItem {
-  id        String          @id @default(cuid())
-  type      GalleryItemType
-  title     String?
-  url       String          // image URL or YouTube video ID
-  order     Int             @default(0)
-  active    Boolean         @default(true)
-  createdAt DateTime        @default(now())
+model Karya {
+  id           String        @id @default(cuid())
+  category     KaryaCategory
+  sumber       String        @default("cholilnafis.id")
+  title        String
+  shortcontent String?
+  fullcontent  String        @db.Text
+  fileUrl      String?
+  status       PostStatus    @default(DRAFT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
-  @@map("gallery_items")
+  @@map("karya")
 }
 
-// ──────────────────────────────────────
-// AUDIT LOG
-// ──────────────────────────────────────
-
-model AuditLog {
-  id        String   @id @default(cuid())
-  action    String   // "CREATE" | "UPDATE" | "DELETE" | "LOGIN"
-  entity    String   // "Post" | "Block" | "User"
-  entityId  String?
-  metadata  Json?
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  createdAt DateTime @default(now())
-
-  @@map("audit_logs")
+enum KaryaCategory {
+  ArtikelKoran
+  KaryaBuku
+  Khotbah
+  Artikel
+  Materi
 }
 
-// ──────────────────────────────────────
-// SETTINGS (global config: footer, social, etc.)
-// ──────────────────────────────────────
-
-model Setting {
-  id        String   @id @default(cuid())
-  key       String   @unique  // "footer_address" | "social_media" | "site_title"
-  value     Json
-  updatedAt DateTime @updatedAt
-
-  @@map("settings")
-}

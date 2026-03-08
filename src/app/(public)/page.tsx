@@ -6,6 +6,8 @@ import Gallery from "@/components/Gallery";
 import Opinions from "@/components/Opinions";
 import FAQ from "@/components/FAQ";
 import BeritaSection from "@/components/BeritaSection";
+import FokusEkonomi from "@/components/FokusEkonomi";
+
 export default function PublicPage() {
   return (
     <>
@@ -156,38 +158,7 @@ export default function PublicPage() {
             </p>
           </div>
 
-          <div className="grid grid-2" style={{ marginBottom: "3rem" }}>
-            <div className="opini-card" style={{ margin: 0 }}>
-              <span
-                className="opini-badge"
-                style={{ background: "var(--secondary-dark)" }}
-              >
-                Artikel
-              </span>
-              <div className="opini-detail">
-                <h4>Hukum Paylater dan Pinjol dalam Tinjauan Fikih</h4>
-                <p>
-                  Penjelasan ringkas batasan-batasan transaksi menunda pembayaran
-                  masa kini antara mubah dan riba.
-                </p>
-              </div>
-            </div>
-            <div className="opini-card" style={{ margin: 0 }}>
-              <span
-                className="opini-badge"
-                style={{ background: "var(--secondary-dark)" }}
-              >
-                Materi
-              </span>
-              <div className="opini-detail">
-                <h4>Optimalisasi Wakaf Uang Produktif</h4>
-                <p>
-                  Konsep dan implementasi wakaf uang sebagai katalisator
-                  kesejahteraan umat tanpa kehilangan pokok harta.
-                </p>
-              </div>
-            </div>
-          </div>
+          <FokusEkonomi />
 
           {/* Tanya Jawab Accordion */}
           <div className="text-center">

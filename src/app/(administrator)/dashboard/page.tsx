@@ -20,14 +20,14 @@ export default function DashboardPage() {
     async function fetchStats() {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') || '' : '';
-        const [posts, works, media] = await Promise.all([
+        const [posts, karyas, media] = await Promise.all([
           apiClient.getPosts(),
-          apiClient.getWorks(),
+          apiClient.getKaryasAdmin(token), // Using token to get counts including draft/archived
           apiClient.getMedia(1, undefined, token),
         ]);
         setStats({
           totalPosts: posts?.data?.length || 0,
-          totalWorks: works?.data?.length || 0,
+          totalWorks: karyas?.data?.length || 0,
           totalMedia: media?.total || 0,
           totalChats: 0,
         });
@@ -64,7 +64,7 @@ export default function DashboardPage() {
     { label: 'Kelola Berita', href: '/post', icon: '📰', desc: 'Tambah, edit, hapus artikel berita' },
     { label: 'Hero Content', href: '/administrator/hero', icon: '🧩', desc: 'Mengedit Hero Content, Bagian Header dan Profile' },
     { label: 'Media Manager', href: '/media', icon: '🖼️', desc: 'Kelola gambar dan file upload' },
-    { label: 'Karya Ilmiah', href: '/administrator/works', icon: '📚', desc: 'Publikasi, buku, jurnal, artikel' },
+    { label: 'Karya Ilmiah', href: '/karya', icon: '📚', desc: 'Publikasi, buku, jurnal, artikel' },
     { label: 'AI Chatbot', href: '/administrator/chatbot', icon: '🤖', desc: 'Analytics & FAQ percakapan' },
     { label: 'Pengaturan', href: '/administrator/settings', icon: '⚙️', desc: 'Footer, sosial media, kontak' },
   ];

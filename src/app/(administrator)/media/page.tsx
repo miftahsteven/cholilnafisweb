@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useMediaAdmin, Media } from '@/hooks/useMediaAdmin';
 
-type Tab = 'image' | 'video';
+type Tab = 'image' | 'video' | 'pdf';
 type UploadModalMode = 'local' | 'url' | null;
 
 export default function MediaPage() {
@@ -18,6 +18,8 @@ export default function MediaPage() {
     fetchMedia,
     uploadMediaLocal,
     uploadMediaUrl,
+    uploadPdf,
+    uploadPdfUrl,
     registerMedia,
     deleteMedia,
     toggleGallery,
@@ -32,6 +34,11 @@ export default function MediaPage() {
   const [videoUrl, setVideoUrl] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
 
+  // State for Add PDF modal
+  const [pdfModal, setPdfModal] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState('');
+  const [pdfTitle, setPdfTitle] = useState(''); 
+
   // State for URL Image upload
   const [imageUrl, setImageUrl] = useState('');
 
@@ -41,6 +48,7 @@ export default function MediaPage() {
   }, [activeTab, fetchMedia]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   // --- Image Handlers ---
 
@@ -93,6 +101,26 @@ export default function MediaPage() {
     setVideoModal(false);
     await fetchMedia(1, activeTab);
   };
+
+  // --- PDF Handlers ---
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      await uploadPdf(file);
+      await fetchMedia(1, activeTab);
+      setUploadModal(null);
+    }
+  };
+
+  const handlePdfUrlUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pdfUrl) return;
+    await uploadPdfUrl(pdfUrl);
+    setPdfUrl('');
+    setUploadModal(null);
+    await fetchMedia(1, activeTab);
+  };  
 
   const handleDelete = async (id: string) => {
     if (confirm("Apakah Anda yakin ingin menghapus media ini?")) {
@@ -149,7 +177,7 @@ export default function MediaPage() {
           >
             {uploading ? '⏳ Mengunggah...' : '+ Tambah Gambar'}
           </button>
-        ) : (
+        )   : activeTab === 'video' ? (
           <button 
             onClick={() => setVideoModal(true)} 
             style={{ ...btnStyle('linear-gradient(135deg, #7c3aed, #4f46e5)', '#fff'), display: 'flex', gap: '6px', alignItems: 'center' }}
@@ -157,7 +185,15 @@ export default function MediaPage() {
           >
             {uploading ? '⏳ Menyimpan...' : '+ Tambah Video'}
           </button>
-        )}
+        ) : activeTab === 'pdf' ? (
+          <button 
+            onClick={() => setPdfModal(true)} 
+            style={{ ...btnStyle('linear-gradient(135deg, #7c3aed, #4f46e5)', '#fff'), display: 'flex', gap: '6px', alignItems: 'center' }}
+            disabled={uploading}
+          >
+            {uploading ? '⏳ Menyimpan...' : '+ Tambah PDF'}
+          </button>
+        ) : null}
       </div>
 
       {success && <div style={{ background: '#dcfce7', color: '#16a34a', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', fontWeight: 500 }}>✓ {success}</div>}
@@ -186,6 +222,17 @@ export default function MediaPage() {
           }}
         >
           Tautan Video
+        </button>
+        <button
+          onClick={() => setActiveTab('pdf')}
+          style={{
+            padding: '0.75rem 1.5rem', background: 'none', border: 'none', fontSize: '1rem', fontWeight: 600,
+            cursor: 'pointer', color: activeTab === 'pdf' ? '#7c3aed' : '#64748b',
+            borderBottom: activeTab === 'pdf' ? '3px solid #7c3aed' : '3px solid transparent',
+            marginBottom: '-2px', transition: 'all 0.2s'
+          }}
+        >
+          Dokumen / PDF
         </button>
       </div>
 
@@ -270,7 +317,7 @@ export default function MediaPage() {
             </div>
           )}
         </div>
-      ) : (
+      ) : activeTab === 'video' ? (
         // VIDEO TABLE
         <div style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -330,6 +377,59 @@ export default function MediaPage() {
               )) : (
                 <tr>
                   <td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>Belum ada video yang ditambahkan.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        // PDF TABLE
+        <div style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                <th style={{ padding: '1rem', textAlign: 'left', color: '#475569', fontSize: '0.85rem', width: '80px' }}>Ikon</th>
+                <th style={{ padding: '1rem', textAlign: 'left', color: '#475569', fontSize: '0.85rem' }}>Nama Dokumen</th>
+                <th style={{ padding: '1rem', textAlign: 'left', color: '#475569', fontSize: '0.85rem' }}>Tautan (URL)</th>
+                <th style={{ padding: '1rem', textAlign: 'right', color: '#475569', fontSize: '0.85rem' }}>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {media.length > 0 ? media.map(m => (
+                <tr key={m.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '1rem' }}>
+                    <div style={{ width: '60px', height: '60px', background: '#e2e8f0', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>
+                      📄
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem', fontWeight: 600, fontSize: '0.9rem', color: '#1e293b' }}>
+                    {m.filename}
+                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px', fontWeight: 'normal' }}>
+                      Berukuran: {(m.size / 1024 / 1024).toFixed(2)} MB
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem' }}>
+                    <a href={getDisplayUrl(m.url)} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'none' }}>{getDisplayUrl(m.url)}</a>
+                  </td>
+                  <td style={{ padding: '1rem', textAlign: 'right' }}>
+                     <button 
+                        onClick={() => { navigator.clipboard.writeText(getDisplayUrl(m.url)); alert("URL disalin!"); }}
+                        style={{ ...btnStyle('#f1f5f9', '#4f46e5'), fontSize: '0.8rem', padding: '0.5rem 0.8rem', marginRight: '6px' }}
+                      >
+                        Salin URL
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(m.id)}
+                        disabled={deleting === m.id}
+                        style={{ ...btnStyle('#fee2e2', '#dc2626'), fontSize: '0.8rem', padding: '0.5rem 0.8rem' }}
+                      >
+                        {deleting === m.id ? '⏳' : 'Hapus'}
+                      </button>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>Belum ada PDF yang ditambahkan.</td>
                 </tr>
               )}
             </tbody>
@@ -425,6 +525,61 @@ export default function MediaPage() {
 
             <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
               <button onClick={() => setVideoModal(false)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}>
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload PDF Modal */}
+      {pdfModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', width: '100%', maxWidth: '500px', boxShadow: '0 20px 50px rgba(0,0,0,0.2)' }}>
+            <h2 style={{ margin: '0 0 1.5rem', fontSize: '1.3rem' }}>Unggah Dokumen PDF</h2>
+            
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+              <button 
+                onClick={() => setUploadModal('local')} 
+                style={{ ...btnStyle(uploadModal !== 'url' ? '#ede9fe' : '#f1f5f9', uploadModal !== 'url' ? '#7c3aed' : '#64748b'), flex: 1 }}
+              >
+                Pilih Berkas Lokal
+              </button>
+              <button 
+                onClick={() => setUploadModal('url')} 
+                style={{ ...btnStyle(uploadModal === 'url' ? '#ede9fe' : '#f1f5f9', uploadModal === 'url' ? '#7c3aed' : '#64748b'), flex: 1 }}
+              >
+                Dari URL (Tautan)
+              </button>
+            </div>
+
+            {uploadModal !== 'url' ? (
+              <div style={{ border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '3rem 2rem', textAlign: 'center', cursor: 'pointer' }} onClick={() => pdfInputRef.current?.click()}>
+                <div style={{ fontSize: '2rem', marginBottom: '1rem', color: '#94a3b8' }}>📄</div>
+                <div style={{ color: '#475569', fontWeight: 600 }}>Klik untuk memilih PDF / Dokumen Word dari komputer</div>
+                <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '0.5rem' }}>Mendukung berkas .pdf, .doc, .docx (Max: 10MB)</div>
+                {/* Specific hidden input targeting PDF for simpler logic without separate ref */}
+                <input type="file" ref={pdfInputRef} accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style={{ display: 'none' }} onChange={(e) => { handlePdfUpload(e); setPdfModal(false); }} />
+              </div>
+            ) : (
+              <form onSubmit={(e) => { handlePdfUrlUpload(e); setPdfModal(false); }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem', color: '#475569' }}>Masukkan URL PDF Asli</label>
+                <input 
+                  type="url" 
+                  value={pdfUrl} 
+                  onChange={(e) => setPdfUrl(e.target.value)} 
+                  placeholder="https://example.com/document.pdf" 
+                  required 
+                  style={inputStyle} 
+                />
+                <button type="submit" disabled={uploading} style={{ ...btnStyle('linear-gradient(135deg, #7c3aed, #4f46e5)', '#fff'), width: '100%' }}>
+                  {uploading ? '⏳ Mendownload...' : 'Unduh Dokumen ke Server'}
+                </button>
+              </form>
+            )}
+
+            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+              <button onClick={() => setPdfModal(false)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}>
                 Batal
               </button>
             </div>

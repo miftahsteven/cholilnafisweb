@@ -57,3 +57,17 @@ export const ChatbotAskSchema = z.object({
 export const UpdateMediaSchema = z.object({
   alt: z.string().max(200).optional(),
 });
+
+// ── KARYA ───────────────────────────────────────────────────────
+export const CreateKaryaSchema = z.object({
+  category: z.enum(['ArtikelKoran', 'KaryaBuku', 'Khotbah', 'Artikel', 'Materi']),
+  sumber: z.string().optional().default('cholilnafis.id'),
+  title: z.string().min(1),
+  shortcontent: z.string().optional(),
+  fullcontent: z.string().min(1),
+  fileUrl: z.string().url().optional(),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).default('DRAFT'),
+});
+
+export const UpdateKaryaSchema = CreateKaryaSchema.partial();
+

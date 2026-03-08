@@ -139,6 +139,40 @@ export function useMediaAdmin() {
     setSuccess("");
   };
 
+  const uploadPdf = async (file: File) => {
+    setUploading(true);
+    setError("");
+    try {
+      const token = getToken();
+      const res = await apiClient.uploadPdf(file, token);
+      setSuccess("File PDF berhasil diunggah!");
+      setTimeout(() => setSuccess(""), 3000);
+      return res.data;
+    } catch (err: any) {
+      setError(err.message || "Gagal mengunggah file PDF.");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const uploadPdfUrl = async (url: string) => {
+    setUploading(true);
+    setError("");
+    try {
+      const token = getToken();
+      const res = await apiClient.uploadPdfUrl(url, token);
+      setSuccess("File PDF berhasil didownload dan disimpan!");
+      setTimeout(() => setSuccess(""), 3000);
+      return res.data;
+    } catch (err: any) {
+      setError(err.message || "Gagal mendownload PDF dari URL.");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return {
     media,
     loading,
@@ -153,6 +187,8 @@ export function useMediaAdmin() {
     fetchMedia,
     uploadMediaLocal,
     uploadMediaUrl,
+    uploadPdf,
+    uploadPdfUrl,
     registerMedia,
     deleteMedia,
     toggleGallery,
