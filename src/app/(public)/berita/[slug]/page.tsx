@@ -2,6 +2,71 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+const BASE_URL = 'https://cholilnafis.id';
+
+function getThumbnailUrl(coverImage: string | null): string | null {
+  if (!coverImage) return null;
+  try {
+    const parsed = JSON.parse(coverImage);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+    return coverImage;
+  } catch {
+    return coverImage;
+  }
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  try {
+    const res = await apiClient.getPost(slug);
+    const post = res.data;
+    if (!post) return {};
+
+    const thumb = getThumbnailUrl(post.coverImage);
+    const description = post.excerpt ||
+      (post.content ? post.content.replace(/<[^>]+>/g, '').slice(0, 155) + '…' : '');
+
+    return {
+      title: post.title,
+      description,
+      alternates: { canonical: `${BASE_URL}/berita/${slug}` },
+      openGraph: {
+        type: 'article',
+        url: `${BASE_URL}/berita/${slug}`,
+        title: post.title,
+        description,
+        publishedTime: post.publishedAt || post.createdAt,
+        modifiedTime: post.updatedAt,
+        authors: [post.author?.name || 'KH. Muhammad Cholil Nafis'],
+        images: thumb ? [{ url: thumb, alt: post.title }] : [],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: post.title,
+        description,
+        images: thumb ? [thumb] : [],
+      },
+    };
+  } catch {
+    return {};
+  }
+}
+
+export async function generateStaticParams() {
+  try {
+    const res = await apiClient.getPosts();
+    const posts: any[] = res.data || [];
+    return posts
+      .filter((p: any) => p.slug)
+      .map((p: any) => ({ slug: p.slug }));
+  } catch {
+    return [];
+  }
+}
 
 export default async function BeritaDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

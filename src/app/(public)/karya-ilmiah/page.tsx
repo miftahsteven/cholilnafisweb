@@ -2,6 +2,21 @@ import React from 'react';
 import { apiClient } from '@/lib/api-client';
 import SharedContentList, { UnifiedItem } from '@/components/SharedContentList';
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Karya Ilmiah & Tulisan',
+  description:
+    'Kumpulan karya tulis ilmiah, artikel koran, buku, dan teks khutbah KH. Muhammad Cholil Nafis — Pakar Fikih dan Ekonomi Syariah Indonesia.',
+  alternates: { canonical: 'https://cholilnafis.id/karya-ilmiah' },
+  openGraph: {
+    title: 'Karya Ilmiah & Tulisan | KH. Cholil Nafis',
+    description:
+      'Menelusuri pustaka tulisan, pemikiran, dan karya-karya lengkap dari KH. Cholil Nafis.',
+    url: 'https://cholilnafis.id/karya-ilmiah',
+    type: 'website',
+  },
+};
 
 export default async function KaryaListPage({ searchParams }: { searchParams: Promise<{ kategori?: string, page?: string }> }) {
   const params = await searchParams;

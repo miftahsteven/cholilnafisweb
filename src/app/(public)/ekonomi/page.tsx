@@ -1,6 +1,21 @@
 import React from 'react';
 import { apiClient } from '@/lib/api-client';
 import SharedContentList, { UnifiedItem } from '@/components/SharedContentList';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Fokus Ekonomi Syariah',
+  description:
+    'Kumpulan karya dan pencerahan KH. Cholil Nafis seputar muamalah maliyah kontemporer, perbankan syariah, dan instrumen keuangan Islam.',
+  alternates: { canonical: 'https://cholilnafis.id/ekonomi' },
+  openGraph: {
+    title: 'Fokus Ekonomi Syariah | KH. Cholil Nafis',
+    description:
+      'Artikel dan materi seputar ekonomi syariah dari KH. Muhammad Cholil Nafis, pakar fikih muamalah Indonesia.',
+    url: 'https://cholilnafis.id/ekonomi',
+    type: 'website',
+  },
+};
 
 export default async function EkonomiListPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const params = await searchParams;
