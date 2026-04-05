@@ -4,18 +4,9 @@ import { apiClient } from '@/lib/api-client';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-const BASE_URL = 'https://cholilnafis.id';
+import { getPublicImageUrl } from '@/lib/media';
 
-function getThumbnailUrl(coverImage: string | null): string | null {
-  if (!coverImage) return null;
-  try {
-    const parsed = JSON.parse(coverImage);
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
-    return coverImage;
-  } catch {
-    return coverImage;
-  }
-}
+const BASE_URL = 'https://cholilnafis.id';
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
@@ -26,7 +17,7 @@ export async function generateMetadata(
     const post = res.data;
     if (!post) return {};
 
-    const thumb = getThumbnailUrl(post.coverImage);
+    const thumb = getPublicImageUrl(post.coverImage);
     const description = post.excerpt ||
       (post.content ? post.content.replace(/<[^>]+>/g, '').slice(0, 155) + '…' : '');
 
@@ -100,18 +91,7 @@ export default async function BeritaDetail({ params }: { params: Promise<{ slug:
     });
   };
 
-  const getThumbnail = (coverImage: string | null) => {
-    if (!coverImage) return null;
-    try {
-      const parsed = JSON.parse(coverImage);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
-      return coverImage;
-    } catch {
-      return coverImage;
-    }
-  };
-
-  const thumbUrl = getThumbnail(post.coverImage);
+  const thumbUrl = getPublicImageUrl(post.coverImage);
 
   return (
     <>
@@ -175,7 +155,7 @@ export default async function BeritaDetail({ params }: { params: Promise<{ slug:
             
             <div className="berita-grid">
               {otherPosts.map((p) => {
-                const thumb = getThumbnail(p.coverImage);
+                const thumb = getPublicImageUrl(p.coverImage);
                 return (
                   <article className="news-card" key={p.id}>
                     <div className="news-thumb">

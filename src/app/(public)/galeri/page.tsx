@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { getPublicImageUrl } from "@/lib/media";
 
 interface GalleryMedia {
   id: string;
@@ -8,8 +9,6 @@ interface GalleryMedia {
   type: string;
   alt: string | null;
 }
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export default function GaleriPage() {
   const [activeTab, setActiveTab] = useState<"foto" | "video">("foto");
@@ -21,11 +20,8 @@ export default function GaleriPage() {
   useEffect(() => {
     async function fetchGallery() {
       try {
-        const baseUrl =
-          typeof window !== "undefined" && window.location.hostname !== "localhost"
-            ? BACKEND_URL.replace("localhost", window.location.hostname)
-            : BACKEND_URL;
-        const res = await fetch(`${baseUrl}/api/media/gallery`);
+        const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.mcnid.net";
+        const res = await fetch(`${BACKEND_URL}/api/media/gallery`);
         const data = await res.json();
         const all: GalleryMedia[] = data.data || [];
         setPhotos(all.filter((m) => m.type === "image"));
@@ -44,17 +40,6 @@ export default function GaleriPage() {
     else document.body.style.overflow = "auto";
     return () => { document.body.style.overflow = "auto"; };
   }, [lightboxImage]);
-
-  const resolveUrl = (url: string) => {
-    if (
-      typeof window !== "undefined" &&
-      url.includes("localhost") &&
-      window.location.hostname !== "localhost"
-    ) {
-      return url.replace("localhost", window.location.hostname);
-    }
-    return url;
-  };
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "system-ui, sans-serif" }}>
@@ -154,7 +139,7 @@ export default function GaleriPage() {
               {photos.map((p) => (
                 <div
                   key={p.id}
-                  onClick={() => setLightboxImage(resolveUrl(p.url))}
+                  onClick={() => setLightboxImage(getPublicImageUrl(p.url))}
                   style={{
                     aspectRatio: "1",
                     overflow: "hidden",
@@ -175,7 +160,7 @@ export default function GaleriPage() {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={resolveUrl(p.url)}
+                    src={getPublicImageUrl(p.url)}
                     alt={p.filename}
                     style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                     onError={(e) => (e.currentTarget.style.display = "none")}
@@ -224,7 +209,7 @@ export default function GaleriPage() {
                 {v.alt ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={v.alt}
+                    src={getPublicImageUrl(v.alt)}
                     alt={v.filename}
                     style={{ width: "100%", height: "160px", objectFit: "cover", display: "block" }}
                   />

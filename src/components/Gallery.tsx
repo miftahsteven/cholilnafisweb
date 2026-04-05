@@ -1,6 +1,7 @@
 "use client";
-import Link from "next/link";
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { getPublicImageUrl } from "@/lib/media";
 
 interface GalleryMedia {
   id: string;
@@ -9,8 +10,6 @@ interface GalleryMedia {
   type: string;
   alt: string | null;
 }
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export default function Gallery() {
   const [activeTab, setActiveTab] = useState<"foto" | "video">("foto");
@@ -22,11 +21,8 @@ export default function Gallery() {
   useEffect(() => {
     async function fetchGallery() {
       try {
-        const baseUrl =
-          typeof window !== "undefined" && window.location.hostname !== "localhost"
-            ? BACKEND_URL.replace("localhost", window.location.hostname)
-            : BACKEND_URL;
-        const res = await fetch(`${baseUrl}/api/media/gallery`);
+        const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.mcnid.net";
+        const res = await fetch(`${BACKEND_URL}/api/media/gallery`);
         const data = await res.json();
         const all: GalleryMedia[] = data.data || [];
         setPhotos(all.filter((m) => m.type === "image"));
@@ -51,17 +47,6 @@ export default function Gallery() {
       document.body.style.overflow = "auto";
     };
   }, [lightboxImage]);
-
-  const resolveUrl = (url: string) => {
-    if (
-      typeof window !== "undefined" &&
-      url.includes("localhost") &&
-      window.location.hostname !== "localhost"
-    ) {
-      return url.replace("localhost", window.location.hostname);
-    }
-    return url;
-  };
 
   return (
     <>
@@ -96,12 +81,12 @@ export default function Gallery() {
                 <div
                   key={p.id}
                   className="gallery-item"
-                  onClick={() => setLightboxImage(resolveUrl(p.url))}
+                  onClick={() => setLightboxImage(getPublicImageUrl(p.url))}
                   style={{ cursor: "pointer", overflow: "hidden" }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={resolveUrl(p.url)}
+                    src={getPublicImageUrl(p.url)}
                     alt={p.filename}
                     style={{
                       width: "100%",
@@ -151,7 +136,7 @@ export default function Gallery() {
                   {v.alt ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={v.alt}
+                      src={getPublicImageUrl(v.alt)}
                       alt={v.filename}
                       style={{
                         width: "100%",

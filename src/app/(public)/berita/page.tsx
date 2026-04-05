@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { getPublicImageUrl } from '@/lib/media';
+
 export default async function BeritaListPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const params = await searchParams;
   const currentPage = parseInt(params.page || '1', 10);
@@ -36,17 +38,6 @@ export default async function BeritaListPage({ searchParams }: { searchParams: P
     });
   };
 
-  const getThumbnail = (coverImage: string | null) => {
-    if (!coverImage) return null;
-    try {
-      const parsed = JSON.parse(coverImage);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
-      return coverImage;
-    } catch {
-      return coverImage;
-    }
-  };
-
   // Map to unified format
   const unifiedData: UnifiedItem[] = posts.map(p => ({
     id: p.id,
@@ -54,7 +45,7 @@ export default async function BeritaListPage({ searchParams }: { searchParams: P
     slugOrId: p.slug,
     dateStr: fmtDate(p.publishedAt),
     excerpt: p.excerpt || "",
-    imageUrl: getThumbnail(p.coverImage),
+    imageUrl: getPublicImageUrl(p.coverImage),
     badgeText: p.categories?.[0]?.category?.name || "Berita",
     readText: "Baca Selengkapnya"
   }));

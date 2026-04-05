@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
+import { getPublicImageUrl } from "@/lib/media";
 
 export default async function BeritaSection() {
   let posts: any[] = [];
@@ -23,17 +24,6 @@ export default async function BeritaSection() {
     });
   };
 
-  const getThumbnail = (coverImage: string | null) => {
-    if (!coverImage) return null;
-    try {
-      const parsed = JSON.parse(coverImage);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
-      return coverImage;
-    } catch {
-      return coverImage; // Plain URL
-    }
-  };
-
   return (
     <section id="berita" style={{ backgroundColor: "var(--white)" }}>
       <div className="container">
@@ -48,7 +38,7 @@ export default async function BeritaSection() {
         <div className="berita-grid">
           {recentPosts.length > 0 ? (
             recentPosts.map((post) => {
-              const thumbUrl = getThumbnail(post.coverImage);
+              const thumbUrl = getPublicImageUrl(post.coverImage);
               return (
                 <article className="news-card" key={post.id}>
                   <div className="news-thumb">
