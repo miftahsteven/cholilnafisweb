@@ -119,16 +119,44 @@ model Media {
 }
 
 model ChatLog {
-  id        String   @id @default(cuid())
-  sessionId String
-  question  String
-  answer    String
-  intent    String?
-  ipHash    String?
-  tokens    Int?
-  createdAt DateTime @default(now())
+  id         String       @id @default(cuid())
+  sessionId  String
+  userId     String?      // From mcnid.net
+  userName   String?      // From mcnid.net
+  userEmail  String?      // From mcnid.net
+  question   String
+  answer     String
+  intent     String?
+  ipHash     String?
+  tokens     Int?
+  mode       String?      // From mcnid.net
+  confidence Float?       // From mcnid.net
+  source     String       @default("cholilnafis.id") // Added for aggregation
+  createdAt  DateTime     @default(now())
+  sources    ChatSource[] // From mcnid.net
+  feedbacks  Feedback[]   // From mcnid.net
 
   @@map("chat_logs")
+}
+
+model ChatSource {
+  id         String   @id @default(cuid())
+  chatId     String
+  sourceType String
+  sourceUrl  String?
+  title      String?
+  chat       ChatLog  @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("chat_sources")
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  chatId    String   @unique
+  isHelpful Boolean
+  chat      ChatLog  @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("feedback")
 }
 
 model KnowledgeBase {
