@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateMediaSchema = exports.ChatbotAskSchema = exports.CreateWorkSchema = exports.UpdateSettingSchema = exports.CreateBlockSchema = exports.UpdatePostSchema = exports.CreatePostSchema = void 0;
+exports.UpdateKaryaSchema = exports.CreateKaryaSchema = exports.UpdateMediaSchema = exports.ChatbotAskSchema = exports.CreateWorkSchema = exports.UpdateSettingSchema = exports.CreateBlockSchema = exports.UpdatePostSchema = exports.CreatePostSchema = void 0;
 const zod_1 = require("zod");
 // ── POSTS ──────────────────────────────────────────────────────
 exports.CreatePostSchema = zod_1.z.object({
@@ -53,3 +53,14 @@ exports.ChatbotAskSchema = zod_1.z.object({
 exports.UpdateMediaSchema = zod_1.z.object({
     alt: zod_1.z.string().max(200).optional(),
 });
+// ── KARYA ───────────────────────────────────────────────────────
+exports.CreateKaryaSchema = zod_1.z.object({
+    category: zod_1.z.enum(['ArtikelKoran', 'KaryaBuku', 'Khotbah', 'Artikel', 'Materi']),
+    sumber: zod_1.z.string().optional().default('cholilnafis.id'),
+    title: zod_1.z.string().min(1),
+    shortcontent: zod_1.z.string().optional(),
+    fullcontent: zod_1.z.string().min(1),
+    fileUrl: zod_1.z.string().url().optional(),
+    status: zod_1.z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).default('DRAFT'),
+});
+exports.UpdateKaryaSchema = exports.CreateKaryaSchema.partial();

@@ -20,12 +20,17 @@ const settings_route_1 = require("./routes/settings.route");
 const chatbot_route_1 = require("./routes/chatbot.route");
 const works_route_1 = require("./routes/works.route");
 const auth_route_1 = require("./routes/auth.route");
+const karya_route_1 = require("./routes/karya.route");
+const prisma_1 = require("./lib/prisma");
 const server = (0, fastify_1.default)({ logger: true });
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',');
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3002').split(',');
 const PORT = Number(process.env.PORT) || 4000;
 async function bootstrap() {
     // ── Security ──────────────────────────────
-    await server.register(helmet_1.default, { global: true });
+    await server.register(helmet_1.default, {
+        global: true,
+        crossOriginResourcePolicy: false,
+    });
     await server.register(cors_1.default, {
         origin: (origin, cb) => {
             if (!origin || ALLOWED_ORIGINS.includes(origin)) {
@@ -36,6 +41,7 @@ async function bootstrap() {
             }
         },
         credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     });
     await server.register(rate_limit_1.default, {
         max: 100,
@@ -62,11 +68,25 @@ async function bootstrap() {
     await server.register(chatbot_route_1.chatbotRoutes, { prefix: '/api/chatbot' });
     await server.register(works_route_1.worksRoutes, { prefix: '/api/works' });
     await server.register(auth_route_1.authRoutes, { prefix: '/api/auth' });
+    await server.register(karya_route_1.karyaRoutes, { prefix: '/api/karya' });
     // ── Health check ───────────────────────────
     server.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
     try {
         await server.listen({ port: PORT, host: '0.0.0.0' });
         console.log(`✅ CMS Backend running on port ${PORT}`);
+        ['SIGINT', 'SIGTERM'].forEach((signal) => {
+            process.on(signal, async () => {
+                console.log(`\nReceived ${signal}, closing server and database connection...`);
+                try {
+                    await server.close();
+                    await prisma_1.prisma.$disconnect();
+                }
+                catch (e) {
+                    console.error(e);
+                }
+                process.exit(0);
+            });
+        });
     }
     catch (err) {
         server.log.error(err);

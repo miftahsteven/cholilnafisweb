@@ -25,20 +25,38 @@ export async function mediaRoutes(fastify: FastifyInstance) {
   fastify.get('/', {
     preHandler: [authMiddleware],
     handler: async (request: FastifyRequest<{ Querystring: { page?: string; type?: string } }>, reply) => {
-      const page = Number(request.query.page || 1);
-      const limit = 20;
-      const [items, total] = await Promise.all([
-        prisma.media.findMany({
-          where: request.query.type ? { type: request.query.type } : {},
-          orderBy: { createdAt: 'desc' },
-          skip: (page - 1) * limit,
-          take: limit,
-        }),
-        prisma.media.count({
-          where: request.query.type ? { type: request.query.type } : {},
-        }),
-      ]);
-      return reply.send({ data: items, total, page, totalPages: Math.ceil(total / limit) });
+      try {
+        console.log(`[DEBUG] GET /api/media hit. Query:`, request.query);
+        const user = (request as any).user;
+        console.log(`[DEBUG] Auth User:`, user?.email, user?.role);
+
+        const page = Number(request.query.page || 1);
+        const limit = 20;
+        
+        console.log(`[DEBUG] Pagination - page: ${page}, limit: ${limit}, skip: ${(page - 1) * limit}`);
+
+        const [items, total] = await Promise.all([
+          prisma.media.findMany({
+            where: request.query.type ? { type: request.query.type } : {},
+            orderBy: { createdAt: 'desc' },
+            skip: (page - 1) * limit,
+            take: limit,
+          }),
+          prisma.media.count({
+            where: request.query.type ? { type: request.query.type } : {},
+          }),
+        ]);
+
+        console.log(`[DEBUG] Successfully fetched ${items.length} items. Total: ${total}`);
+        return reply.send({ data: items, total, page, totalPages: Math.ceil(total / limit) });
+      } catch (err: any) {
+        console.error(`[ERROR] GET /api/media failed:`, err);
+        return reply.status(500).send({ 
+          error: 'Internal Server Error', 
+          message: err.message,
+          stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        });
+      }
     },
   });
 

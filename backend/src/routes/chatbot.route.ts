@@ -3,6 +3,8 @@ import { processChatbotQuestion } from '../services/ai/chatbot.service';
 import { ChatbotAskSchema } from '../utils/zod-schemas';
 import { ZodError } from 'zod';
 import crypto from 'crypto';
+import { authMiddleware, requireRole } from '../middlewares/auth.middleware';
+import { chatbotAdminService } from '../services/chatbot-admin.service';
 import { prisma } from '../lib/prisma';
 
 export async function chatbotRoutes(fastify: FastifyInstance) {
@@ -51,5 +53,20 @@ export async function chatbotRoutes(fastify: FastifyInstance) {
     ]);
 
     return reply.send({ total: totalChats, topQuestions });
+  });
+
+  // GET all questions (aggregated, admin only)
+  fastify.get('/admin/questions', {
+    preHandler: [authMiddleware, requireRole('ADMIN', 'SUPER_ADMIN')],
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const token = request.headers['authorization']?.slice(7) || '';
+        const questions = await chatbotAdminService.getAggregatedQuestions(token);
+        return reply.send({ data: questions });
+      } catch (err: any) {
+        fastify.log.error(err);
+        return reply.status(500).send({ error: 'Gagal mengambil data pertanyaan.' });
+      }
+    },
   });
 }

@@ -8,48 +8,57 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  name         String
-  username     String?    @unique
-  email        String     @unique
-  image        String?
-  passwordHash String?
-  role         Role       @default(EDITOR)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  auditLogs    AuditLog[]
-  posts        Post[]
+  id               String     @id @default(cuid())
+  name             String
+  username         String?    @unique
+  email            String     @unique
+  image            String?
+  passwordHash     String?
+  role             Role       @default(EDITOR)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  twoFactorEnabled Boolean    @default(false)
+  twoFactorSecret  String?
+  auditLogs        AuditLog[]
+  courses          courses[]
+  posts            Post[]
+  videos           videos[]
 
   @@map("users")
 }
 
 model Post {
-  id          String         @id @default(cuid())
-  title       String
-  slug        String         @unique
-  content     String
-  excerpt     String?
-  coverImage  String?
-  status      PostStatus     @default(DRAFT)
-  publishedAt DateTime?
-  seoTitle    String?
-  seoDesc     String?
-  schemaJson  Json?
-  authorId    String
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  categories  PostCategory[]
-  tags        PostTag[]
-  author      User           @relation(fields: [authorId], references: [id])
+  id           String         @id @default(cuid())
+  title        String
+  slug         String         @unique
+  content      String
+  excerpt      String?
+  coverImage   String?
+  status       PostStatus     @default(DRAFT)
+  publishedAt  DateTime?
+  seoTitle     String?
+  seoDesc      String?
+  schemaJson   Json?
+  authorId     String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  customAuthor String?
+  type         String         @default("news")
+  isHighlight  Boolean        @default(false)
+  viewCount    Int            @default(0)
+  categories   PostCategory[]
+  tags         PostTag[]
+  author       User           @relation(fields: [authorId], references: [id])
 
   @@map("posts")
 }
 
 model Category {
-  id    String         @id @default(cuid())
-  name  String         @unique
-  slug  String         @unique
-  posts PostCategory[]
+  id               String             @id @default(cuid())
+  name             String             @unique
+  slug             String             @unique
+  posts            PostCategory[]
+  video_categories video_categories[]
 
   @@map("categories")
 }
@@ -121,40 +130,39 @@ model Media {
 model ChatLog {
   id         String       @id @default(cuid())
   sessionId  String
-  userId     String?      // From mcnid.net
-  userName   String?      // From mcnid.net
-  userEmail  String?      // From mcnid.net
   question   String
   answer     String
   intent     String?
   ipHash     String?
   tokens     Int?
-  mode       String?      // From mcnid.net
-  confidence Float?       // From mcnid.net
-  source     String       @default("cholilnafis.id") // Added for aggregation
   createdAt  DateTime     @default(now())
-  sources    ChatSource[] // From mcnid.net
-  feedbacks  Feedback[]   // From mcnid.net
+  confidence Float?
+  mode       String?
+  userId     String?
+  userEmail  String?
+  userName   String?
+  sources    ChatSource[]
+  feedbacks  Feedback?
 
   @@map("chat_logs")
 }
 
 model ChatSource {
-  id         String   @id @default(cuid())
+  id         String  @id @default(cuid())
   chatId     String
   sourceType String
   sourceUrl  String?
   title      String?
-  chat       ChatLog  @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  chat       ChatLog @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@map("chat_sources")
 }
 
 model Feedback {
-  id        String   @id @default(cuid())
-  chatId    String   @unique
+  id        String  @id @default(cuid())
+  chatId    String  @unique
   isHelpful Boolean
-  chat      ChatLog  @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  chat      ChatLog @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@map("feedback")
 }
@@ -223,17 +231,268 @@ model Setting {
   @@map("settings")
 }
 
+model Karya {
+  id           String        @id @default(cuid())
+  category     KaryaCategory
+  sumber       String        @default("cholilnafis.id")
+  title        String
+  shortcontent String?
+  fullcontent  String
+  fileUrl      String?
+  status       PostStatus    @default(DRAFT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("karya")
+}
+
+model course_modules {
+  id        String    @id
+  title     String
+  order     Int       @default(0)
+  courseId  String
+  createdAt DateTime  @default(now())
+  courses   courses   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons   lessons[]
+}
+
+model courses {
+  id             String           @id
+  title          String
+  slug           String           @unique
+  description    String?
+  coverImage     String?
+  category       String           @default("Umum")
+  level          String           @default("Pemula")
+  durationHours  Float?
+  price          Float            @default(0)
+  hasCertificate Boolean          @default(false)
+  status         CourseStatus     @default(DRAFT)
+  authorId       String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  course_modules course_modules[]
+  users          User             @relation(fields: [authorId], references: [id])
+  enrollments    enrollments[]
+}
+
+model enrollments {
+  id            String   @id
+  userId        String
+  courseId      String
+  paymentStatus String   @default("free")
+  enrolledAt    DateTime @default(now())
+  courses       courses  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+model BlockedKiAiUser {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  reason    String?
+  createdAt DateTime @default(now())
+  userEmail String?
+  userName  String?
+
+  @@map("ki_ai_blocked_users")
+}
+
+model KiAiKnowledge {
+  id          String   @id @default(cuid())
+  category    String
+  title       String?
+  description String?  @db.Text
+  content     String   @db.Text
+  keywords    String?  @db.Text
+  status      String   @default("PUBLISHED")
+  sharing     String   @default("PUBLIC")
+  author      String?  @default("K.H. Cholil Nafis")
+  sourceLink  String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("ki_ai_knowledge")
+}
+
+model lesson_progress {
+  id          String    @id
+  userId      String
+  lessonId    String
+  completed   Boolean   @default(false)
+  watchedSec  Int       @default(0)
+  completedAt DateTime?
+  updatedAt   DateTime
+  lessons     lessons   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+}
+
+model lessons {
+  id              String            @id
+  title           String
+  type            LessonType        @default(VIDEO)
+  content         String?
+  videoUrl        String?
+  fileUrl         String?
+  durationMin     Int?
+  order           Int               @default(0)
+  isFree          Boolean           @default(false)
+  moduleId        String
+  createdAt       DateTime          @default(now())
+  lesson_progress lesson_progress[]
+  course_modules  course_modules    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+model media_monitoring_cache {
+  id          String   @id
+  query       String
+  dateFrom    String
+  dateTo      String
+  resultsData Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+
+  @@unique([query, dateFrom, dateTo])
+}
+
+model sna_interactions {
+  id                                                           String         @id
+  sourceUserId                                                 String
+  targetUserId                                                 String
+  type                                                         String
+  tweetId                                                      String
+  createdAt                                                    DateTime       @default(now())
+  snaResultId                                                  String
+  sna_results                                                  sna_results    @relation(fields: [snaResultId], references: [id], onDelete: Cascade)
+  sna_user_nodes_sna_interactions_sourceUserIdTosna_user_nodes sna_user_nodes @relation("sna_interactions_sourceUserIdTosna_user_nodes", fields: [sourceUserId], references: [id])
+  sna_user_nodes_sna_interactions_targetUserIdTosna_user_nodes sna_user_nodes @relation("sna_interactions_targetUserIdTosna_user_nodes", fields: [targetUserId], references: [id])
+}
+
+model sna_results {
+  id               String             @id
+  keyword          String
+  totalNodes       Int
+  totalEdges       Int
+  graphData        Json?
+  analytics        Json?
+  createdAt        DateTime           @default(now())
+  sna_interactions sna_interactions[]
+  sna_tweets       sna_tweets[]
+}
+
+model sna_tweets {
+  id          String      @id
+  text        String
+  createdAt   DateTime
+  userId      String
+  snaResultId String
+  sna_results sna_results @relation(fields: [snaResultId], references: [id], onDelete: Cascade)
+}
+
+model sna_user_nodes {
+  id                                                             String             @id
+  username                                                       String
+  followers                                                      Int?
+  createdAt                                                      DateTime           @default(now())
+  sna_interactions_sna_interactions_sourceUserIdTosna_user_nodes sna_interactions[] @relation("sna_interactions_sourceUserIdTosna_user_nodes")
+  sna_interactions_sna_interactions_targetUserIdTosna_user_nodes sna_interactions[] @relation("sna_interactions_targetUserIdTosna_user_nodes")
+}
+
+model socmed_posts {
+  id              String          @id
+  postId          String
+  url             String
+  type            String
+  displayUrl      String?
+  caption         String?
+  timestamp       DateTime
+  likesCount      Int             @default(0)
+  commentsCount   Int             @default(0)
+  reposts         Int             @default(0)
+  shared          Int             @default(0)
+  er              Float           @default(0)
+  hashtags        Json?
+  profileId       String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime
+  viewsCount      Int             @default(0)
+  socmed_profiles socmed_profiles @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, profileId])
+}
+
+model socmed_profiles {
+  id             String         @id
+  handle         String
+  platform       String
+  name           String?
+  avatar         String?
+  bio            String?
+  followers      Int            @default(0)
+  following      Int            @default(0)
+  posts          Int            @default(0)
+  er             Float          @default(0)
+  avgLikes       Float          @default(0)
+  avgComments    Float          @default(0)
+  recentTrend    Json?
+  isPrivate      Boolean        @default(false)
+  lastScraped    DateTime       @default(now())
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime
+  followersTrend Json?
+  trendDates     Json?
+  socmed_posts   socmed_posts[]
+
+  @@unique([handle, platform])
+  @@index([handle, platform])
+}
+
+model video_categories {
+  videoId    String
+  categoryId String
+  categories Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  videos     videos   @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@id([videoId, categoryId])
+}
+
+model videos {
+  id               String             @id
+  title            String
+  slug             String             @unique
+  description      String?
+  sourceType       VideoSourceType    @default(YOUTUBE)
+  videoUrl         String?
+  coverImage       String?
+  duration         String?
+  isHighlight      Boolean            @default(false)
+  status           PostStatus         @default(DRAFT)
+  publishedAt      DateTime?
+  authorId         String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  viewCount        Int                @default(0)
+  dislikeCount     Int                @default(0)
+  likeCount        Int                @default(0)
+  video_categories video_categories[]
+  users            User               @relation(fields: [authorId], references: [id])
+}
+
 enum Role {
   SUPER_ADMIN
   ADMIN
   EDITOR
   MODERATOR
+  PENGAJAR
 }
 
 enum PostStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+  REVIEW
 }
 
 enum WorkType {
@@ -248,21 +507,6 @@ enum GalleryItemType {
   VIDEO_YOUTUBE
 }
 
-model Karya {
-  id           String        @id @default(cuid())
-  category     KaryaCategory
-  sumber       String        @default("cholilnafis.id")
-  title        String
-  shortcontent String?
-  fullcontent  String        @db.Text
-  fileUrl      String?
-  status       PostStatus    @default(DRAFT)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  @@map("karya")
-}
-
 enum KaryaCategory {
   ArtikelKoran
   KaryaBuku
@@ -271,3 +515,19 @@ enum KaryaCategory {
   Materi
 }
 
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum LessonType {
+  VIDEO
+  TEXT
+  PDF
+}
+
+enum VideoSourceType {
+  UPLOAD
+  YOUTUBE
+}

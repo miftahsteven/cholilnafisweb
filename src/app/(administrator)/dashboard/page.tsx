@@ -20,16 +20,17 @@ export default function DashboardPage() {
     async function fetchStats() {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') || '' : '';
-        const [posts, karyas, media] = await Promise.all([
+        const [posts, karyas, media, chats] = await Promise.all([
           apiClient.getPosts(),
-          apiClient.getKaryasAdmin(token), // Using token to get counts including draft/archived
+          apiClient.getKaryasAdmin(token),
           apiClient.getMedia(1, undefined, token),
+          apiClient.getChatbotQuestions(token),
         ]);
         setStats({
           totalPosts: posts?.data?.length || 0,
           totalWorks: karyas?.data?.length || 0,
           totalMedia: media?.total || 0,
-          totalChats: 0,
+          totalChats: chats?.data?.length || 0,
         });
       } catch (_) {
         // fallback

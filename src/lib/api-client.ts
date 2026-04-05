@@ -112,6 +112,7 @@ export const apiClient = {
     method: 'POST',
     body: { question, sessionId },
   }),
+  getChatbotQuestions: (token: string) => request<any>('/api/chatbot/admin/questions', { token }),
 
   // Media
   getMedia: (page?: number, type?: string, token?: string) => request<any>(`/api/media?page=${page || 1}${type ? `&type=${type}` : ''}`, { token }),

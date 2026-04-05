@@ -71,3 +71,19 @@ export const CreateKaryaSchema = z.object({
 
 export const UpdateKaryaSchema = CreateKaryaSchema.partial();
 
+// ── KI-AI KNOWLEDGE ─────────────────────────────────────────────
+export const CreateKiAiKnowledgeSchema = z.object({
+  category: z.string().min(1),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  content: z.string().min(1),
+  keywords: z.string().optional(),
+  status: z.enum(['DRAFT', 'PUBLISHED']).default('PUBLISHED'),
+  sharing: z.enum(['PUBLIC', 'INTERNAL']).default('PUBLIC'),
+  author: z.string().optional().default('K.H. Cholil Nafis'),
+  sourceLink: z.string().optional().or(z.literal('')),
+  metadata: z.record(z.any()).optional(),
+});
+
+export const UpdateKiAiKnowledgeSchema = CreateKiAiKnowledgeSchema.partial();
+

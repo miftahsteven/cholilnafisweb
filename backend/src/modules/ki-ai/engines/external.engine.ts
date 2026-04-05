@@ -1,0 +1,70 @@
+import { ApifyClient } from 'apify-client';
+
+// Inisialisasi Apify Client
+const apifyClient = new ApifyClient({
+  token: process.env.APIFY_TOKEN || '',
+});
+
+export interface ExternalKnowledgeResult {
+  title: string;
+  snippet: string;
+  url: string;
+  sourceType: string;
+}
+
+export class ExternalEngine {
+  /**
+   * Search external knowledge from MUI and NU domains via Apify google-search-scraper
+   */
+  async search(query: string, limit: number = 3): Promise<ExternalKnowledgeResult[]> {
+    if (!process.env.APIFY_TOKEN) {
+      console.warn('APIFY_TOKEN is not set. Skipping external retrieval.');
+      return [];
+    }
+
+    try {
+      // Modify query to only search specified domains
+      const siteFilter = '(site:mui.or.id OR site:nu.or.id)';
+      const searchQuery = `${query} ${siteFilter}`;
+
+      // Memanggil Apify Actor 'apify/google-search-scraper'
+      // Dokumentasi: https://apify.com/apify/google-search-scraper
+      const run = await apifyClient.actor('apify/google-search-scraper').call({
+        queries: searchQuery,
+        maxPagesPerQuery: 1,
+        resultsPerPage: limit,
+        countryCode: 'id',
+        languageCode: 'id',
+      });
+
+      const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
+      
+      const results: ExternalKnowledgeResult[] = [];
+      for (const item of items) {
+        // Apify google-search-scraper mengembalikan 'organicResults'
+        const organicResults = item.organicResults as any[];
+        if (organicResults && organicResults.length > 0) {
+          for (const res of organicResults.slice(0, limit)) {
+            let sourceType = 'external';
+            if (res.url?.includes('mui.or.id')) sourceType = 'mui';
+            else if (res.url?.includes('nu.or.id')) sourceType = 'nu';
+
+            results.push({
+              title: res.title || '',
+              snippet: res.description || '',
+              url: res.url || '',
+              sourceType,
+            });
+          }
+        }
+      }
+
+      return results;
+    } catch (error) {
+      console.error('External engine search error:', error);
+      return [];
+    }
+  }
+}
+
+export const externalEngine = new ExternalEngine();

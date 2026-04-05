@@ -8,6 +8,8 @@ const chatbot_service_1 = require("../services/ai/chatbot.service");
 const zod_schemas_1 = require("../utils/zod-schemas");
 const zod_1 = require("zod");
 const crypto_1 = __importDefault(require("crypto"));
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const chatbot_admin_service_1 = require("../services/chatbot-admin.service");
 const prisma_1 = require("../lib/prisma");
 async function chatbotRoutes(fastify) {
     // Chatbot-specific rate limit: max 10 requests per minute per IP
@@ -49,5 +51,20 @@ async function chatbotRoutes(fastify) {
             }) ?? [],
         ]);
         return reply.send({ total: totalChats, topQuestions });
+    });
+    // GET all questions (aggregated, admin only)
+    fastify.get('/admin/questions', {
+        preHandler: [auth_middleware_1.authMiddleware, (0, auth_middleware_1.requireRole)('ADMIN', 'SUPER_ADMIN')],
+        handler: async (request, reply) => {
+            try {
+                const token = request.headers['authorization']?.slice(7) || '';
+                const questions = await chatbot_admin_service_1.chatbotAdminService.getAggregatedQuestions(token);
+                return reply.send({ data: questions });
+            }
+            catch (err) {
+                fastify.log.error(err);
+                return reply.status(500).send({ error: 'Gagal mengambil data pertanyaan.' });
+            }
+        },
     });
 }

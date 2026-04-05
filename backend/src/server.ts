@@ -18,6 +18,7 @@ import { chatbotRoutes } from './routes/chatbot.route';
 import { worksRoutes } from './routes/works.route';
 import { authRoutes } from './routes/auth.route';
 import { karyaRoutes } from './routes/karya.route';
+import { kiAiRoutes } from './routes/ki-ai.route';
 import { prisma } from './lib/prisma';
 
 const server = Fastify({ logger: true });
@@ -73,6 +74,7 @@ async function bootstrap() {
   await server.register(worksRoutes, { prefix: '/api/works' });
   await server.register(authRoutes, { prefix: '/api/auth' });
   await server.register(karyaRoutes, { prefix: '/api/karya' });
+  await server.register(kiAiRoutes, { prefix: '/api/admin/ki-ai' });
 
   // ── Health check ───────────────────────────
   server.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));

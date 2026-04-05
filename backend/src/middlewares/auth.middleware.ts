@@ -15,17 +15,20 @@ export async function authMiddleware(
   reply: FastifyReply
 ) {
   const authHeader = request.headers['authorization'];
+  console.log(`[DEBUG] Auth Header:`, authHeader ? 'Present' : 'Missing');
+  
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.error("Auth header missing or invalid:", request.headers);
+    console.warn("[WARN] Auth header missing or invalid format:", request.headers);
     return reply.status(401).send({ error: 'Unauthorized: Missing token' });
   }
 
   const token = authHeader.slice(7);
   try {
     const payload = jwt.verify(token, getJwtSecret()) as AuthPayload;
+    console.log(`[DEBUG] JWT Verified for: ${payload.email} (${payload.role})`);
     (request as any).user = payload;
   } catch (err: any) {
-    console.error("JWT Verification failed:", err.message);
+    console.error("[ERROR] JWT Verification failed:", err.message);
     return reply.status(401).send({ error: 'Unauthorized: Invalid or expired token' });
   }
 }
