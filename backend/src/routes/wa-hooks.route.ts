@@ -33,7 +33,17 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
         const lowerText = text.toLowerCase().trim();
 
         // Check triggers
-        const isTanyaKi = lowerText.startsWith('tanya ki');
+        const questionPrefixes = [
+            'tanya ki',
+            'mau tanya ki',
+            'kiai mau tanya',
+            'izin bertanya kiai',
+            'boleh tanya kiai'
+        ];
+        
+        const matchingKeyword = questionPrefixes.find(p => lowerText.includes(p));
+        const isTanyaKi = !!matchingKeyword;
+        
         const isSalam = lowerText.startsWith("assalamu'alaikum") ||
             lowerText.startsWith("assalamualaikum") ||
             lowerText.startsWith("assalamu’alaikum"); // support different apostrophe
@@ -92,7 +102,9 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
                     finalResponse = greetingReplies[Math.floor(Math.random() * greetingReplies.length)];
                 }
                 else if (isTanyaKi) {
-                    const question = text.substring('tanya ki'.length).trim();
+                    // If trigger is found anywhere, use the whole message as the question
+                    // This allows messages like "Assalamu'alaikum kiai mau tanya..."
+                    const question = text.trim();
                     if (!question) return;
 
                     // Use the common ki.ai system logic
