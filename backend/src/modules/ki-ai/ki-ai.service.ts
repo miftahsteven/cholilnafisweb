@@ -30,6 +30,11 @@ export class KiAiService {
       }
     }
 
+    // For WhatsApp users, we only count real questions and ignore greetings
+    if (userId.endsWith('@c.us')) {
+      return questionCount;
+    }
+
     return questionCount + Math.floor(greetingCount / 3);
   }
 
@@ -114,9 +119,15 @@ export class KiAiService {
 
       // 3. Rate Limit
       if (userId) {
+        const isWhatsApp = userId.endsWith('@c.us');
+        const limit = isWhatsApp ? 15 : 5;
         const dailyCount = await this.calculateUsedQuota(userId);
-        if (dailyCount >= 5) {
-          const limitMsg = "Anda telah mencapai batas maksimal 5 pertanyaan untuk hari ini. Silakan kembali besok atau hubungi redaksi@mcnid.net.";
+
+        if (dailyCount >= limit) {
+          const limitMsg = isWhatsApp 
+            ? `Anda telah mencapai batas maksimal ${limit} pertanyaan untuk hari ini. Silakan kembali besok.`
+            : `Anda telah mencapai batas maksimal ${limit} pertanyaan untuk hari ini. Silakan kembali besok atau hubungi redaksi@mcnid.net.`;
+
           await prisma.chatLog.update({ where: { id: initialLog.id }, data: { answer: limitMsg, mode: 'rate-limited' } });
           return limitMsg;
         }
