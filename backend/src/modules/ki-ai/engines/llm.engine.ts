@@ -19,16 +19,12 @@ ATURAN UTAMA DAN PRIORITAS RUJUKAN:
 6. Jawaban harus sopan, jelas, dan Islami.
 `;
 
-  async buildAndStreamPrompt(
+  private buildPrompt(
     question: string,
     mode: ChatMode,
     internalData: InternalKnowledgeResult[],
     externalData: ExternalKnowledgeResult[]
   ) {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not configured');
-    }
-
     let contextText = '';
 
     if (mode === 'internal' || mode === 'hybrid') {
@@ -56,7 +52,7 @@ ATURAN UTAMA DAN PRIORITAS RUJUKAN:
       instructions += 'BERHENTI. Tidak ada data internal maupun eksternal. Sampaikan permohonan maaf bahwa data belum tersedia.';
     }
 
-    const finalPrompt = `
+    return `
 ${this.basePrompt}
 
 [PERTANYAAN USER]
@@ -64,17 +60,54 @@ ${question}
 ${contextText}
 ${instructions}
 `;
+  }
 
-    // Kita kembalikan stream dari OpenAI
+  async buildAndStreamPrompt(
+    question: string,
+    mode: ChatMode,
+    internalData: InternalKnowledgeResult[],
+    externalData: ExternalKnowledgeResult[]
+  ) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured');
+    }
+
+    const finalPrompt = this.buildPrompt(question, mode, internalData, externalData);
+
     return await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // atau 'gpt-4o' menyesuaikan kebutuhan
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: this.basePrompt },
         { role: 'user', content: finalPrompt },
       ],
       stream: true,
-      temperature: 0.2, // Low temperature for more deterministic/factual answers
+      temperature: 0.2,
     });
+  }
+
+  async generate(
+    question: string,
+    mode: ChatMode,
+    internalData: InternalKnowledgeResult[],
+    externalData: ExternalKnowledgeResult[]
+  ) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured');
+    }
+
+    const finalPrompt = this.buildPrompt(question, mode, internalData, externalData);
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: this.basePrompt },
+        { role: 'user', content: finalPrompt },
+      ],
+      stream: false,
+      temperature: 0.2,
+    });
+
+    return completion.choices[0].message.content || '';
   }
 }
 

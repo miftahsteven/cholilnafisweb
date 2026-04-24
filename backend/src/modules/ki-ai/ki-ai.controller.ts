@@ -1,4 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
+import { kiAiService } from './ki-ai.service';
 import { knowledgeEngine, InternalKnowledgeResult } from './engines/knowledge.engine';
 import { externalEngine, ExternalKnowledgeResult } from './engines/external.engine';
 import { decisionEngine } from './engines/decision.engine';
@@ -20,29 +21,7 @@ const ChatRequestSchema = z.object({
 
 export class KiAiController {
   private async calculateUsedQuota(userId: string): Promise<number> {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-
-    const logsToday = await prisma.chatLog.findMany({
-      where: {
-        userId,
-        createdAt: { gte: startOfToday }
-      },
-      select: { mode: true }
-    });
-
-    let questionCount = 0;
-    let greetingCount = 0;
-
-    for (const log of logsToday) {
-      if (log.mode === 'greeting' || log.mode === 'off-topic') {
-        greetingCount++;
-      } else if (log.mode !== 'pending' && log.mode !== 'blocked' && log.mode !== 'rate-limited') {
-        questionCount++;
-      }
-    }
-
-    return questionCount + Math.floor(greetingCount / 3);
+    return kiAiService.calculateUsedQuota(userId);
   }
 
 
