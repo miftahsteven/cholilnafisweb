@@ -151,7 +151,10 @@ export class KiAiService {
       }
 
       // 5. Generate Answer
-      const fullAnswer = await llmEngine.generate(message, mode, internalResults, externalResults);
+      const dalilKeywords = ['dalil', 'ayat', 'alquran', 'al-quran', 'hadis', 'hadist', 'sumber', 'teks arab', 'nas '];
+      const includeDalil = dalilKeywords.some(kw => message.toLowerCase().includes(kw));
+
+      const fullAnswer = await llmEngine.generate(message, mode, internalResults, externalResults, includeDalil);
 
       await prisma.chatLog.update({
         where: { id: initialLog.id },

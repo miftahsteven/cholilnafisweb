@@ -23,7 +23,8 @@ ATURAN UTAMA DAN PRIORITAS RUJUKAN:
     question: string,
     mode: ChatMode,
     internalData: InternalKnowledgeResult[],
-    externalData: ExternalKnowledgeResult[]
+    externalData: ExternalKnowledgeResult[],
+    includeDalil: boolean = false
   ) {
     let contextText = '';
 
@@ -52,6 +53,10 @@ ATURAN UTAMA DAN PRIORITAS RUJUKAN:
       instructions += 'BERHENTI. Tidak ada data internal maupun eksternal. Sampaikan permohonan maaf bahwa data belum tersedia.';
     }
 
+    if (includeDalil) {
+      instructions += '\n\n[RESEARCH DALIL]\nPengguna meminta dalil. Jika [CONTEXT INTERNAL] atau [CONTEXT EXTERNAL] tidak mencantumkan ayat Al-Quran atau Hadis yang spesifik, Anda DIWAJIBKAN melakukan research menggunakan pengetahuan Anda untuk mencantumkan dalil Al-Quran (teks Arab, referensi surat:ayat, & terjemah) serta Hadis yang RELEVAN dan SAHIH. Pastikan dalil yang dipilih sesuai dengan manhaj Ahlus Sunnah wal Jamaah (NU/moderat) yang mengedepankan tawasuth (moderat), tawazun (seimbang), dan i\'tidal (tegak lurus) sebagaimana diajarkan oleh K.H. Cholil Nafis.';
+    }
+
     return `
 ${this.basePrompt}
 
@@ -66,13 +71,14 @@ ${instructions}
     question: string,
     mode: ChatMode,
     internalData: InternalKnowledgeResult[],
-    externalData: ExternalKnowledgeResult[]
+    externalData: ExternalKnowledgeResult[],
+    includeDalil: boolean = false
   ) {
     if (!process.env.OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY is not configured');
     }
 
-    const finalPrompt = this.buildPrompt(question, mode, internalData, externalData);
+    const finalPrompt = this.buildPrompt(question, mode, internalData, externalData, includeDalil);
 
     return await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -89,13 +95,14 @@ ${instructions}
     question: string,
     mode: ChatMode,
     internalData: InternalKnowledgeResult[],
-    externalData: ExternalKnowledgeResult[]
+    externalData: ExternalKnowledgeResult[],
+    includeDalil: boolean = false
   ) {
     if (!process.env.OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY is not configured');
     }
 
-    const finalPrompt = this.buildPrompt(question, mode, internalData, externalData);
+    const finalPrompt = this.buildPrompt(question, mode, internalData, externalData, includeDalil);
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',

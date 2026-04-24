@@ -235,7 +235,10 @@ export class KiAiController {
       }
 
       // 5. Call LLM
-      const stream = await llmEngine.buildAndStreamPrompt(message, mode, internalResults, externalResults);
+      const dalilKeywords = ['dalil', 'ayat', 'alquran', 'al-quran', 'hadis', 'hadist', 'sumber', 'teks arab', 'nas '];
+      const includeDalil = dalilKeywords.some(kw => message.toLowerCase().includes(kw));
+
+      const stream = await llmEngine.buildAndStreamPrompt(message, mode, internalResults, externalResults, includeDalil);
 
       reply.raw.setHeader('Content-Type', 'text/event-stream');
       reply.raw.setHeader('Cache-Control', 'no-cache');
