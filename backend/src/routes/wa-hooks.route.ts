@@ -32,35 +32,24 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
         const text = payload.body || '';
         const lowerText = text.toLowerCase().trim();
 
-        // Check triggers
-        const questionPrefixes = [
-            'tanya ki',
-            'mau tanya ki',
-            'kiai mau tanya',
-            'izin bertanya kiai',
-            'boleh tanya kiai'
-        ];
-        
-        const matchingKeyword = questionPrefixes.find(p => lowerText.includes(p));
-        const isTanyaKi = !!matchingKeyword;
-        
-        const isSalam = lowerText.startsWith("assalamu'alaikum") ||
-            lowerText.startsWith("assalamualaikum") ||
-            lowerText.startsWith("assalamu’alaikum"); // support different apostrophe
-        const isGreeting = lowerText.startsWith('hallo') ||
-            lowerText.startsWith('halo') ||
-            lowerText.startsWith('selamat pagi') ||
-            lowerText.startsWith('selamat siang') ||
-            lowerText.startsWith('selamat sore') ||
-            lowerText.startsWith('selamat malam') ||
-            lowerText.startsWith('hai') ||
-            lowerText.startsWith('hi');
+        // Pre-check for greetings/salam to use in prepending later
+        const isSalam = lowerText.includes("assalamu'alaikum") ||
+            lowerText.includes("assalamualaikum") ||
+            lowerText.includes("assalamu’alaikum"); 
+        const isGreeting = lowerText.includes('hallo') ||
+            lowerText.includes('halo') ||
+            lowerText.includes('hai') ||
+            lowerText.includes('hi') ||
+            lowerText.includes('selamat pagi') ||
+            lowerText.includes('selamat siang') ||
+            lowerText.includes('selamat sore') ||
+            lowerText.includes('selamat malam');
 
-        console.log(`[WA-HOOKS] Trigger Check: text="${text}", isTanyaKi=${isTanyaKi}, isSalam=${isSalam}, isGreeting=${isGreeting}`);
+        console.log(`[WA-HOOKS] Received message: text="${text}"`);
 
-        // RULE: selain diawali "Tanya ki", dan 2 model sapaan diatas, tidak perlu di simpan dan tidak perlu dijawab.
-        if (!isTanyaKi && !isSalam && !isGreeting) {
-            return reply.send({ status: 'ignored', reason: 'not a valid trigger' });
+        // RULE: Abaikan jika pesan kosong
+        if (!text.trim()) {
+            return reply.send({ status: 'ignored', reason: 'empty message' });
         }
 
         // Respond immediately to WAHA to avoid timeouts
@@ -84,36 +73,45 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
                 if (category === 'BAD') {
                     finalResponse = "Mohon maaf sebelumnya, kami ingin mengingatkan bahwa seluruh riwayat percakapan Anda tersimpan dalam sistem kami. Kami sangat menghargai niat baik Anda untuk berkonsultasi, namun mohon untuk tetap menjaga adab, sopan santun, dan etika dalam berkomunikasi di majelis ilmu digital ini. Mari kita gunakan ruang ini dengan cara yang elegan dan penuh keberkahan. Terima kasih.";
                 }
-                else if (isSalam) {
-                    // RULE: tambahkan lagi jika dimulai assalamu'alaikum / assalamualaikum
-                    const salamReplies = [
-                        "Wa'alaikum salam Wr. Wb. Masya Allah, sapaan yang membawa kesejukan! Senang sekali bisa bersua dengan Anda di sini. Bagaimana kabarnya? Adakah kemusykilan agama yang sedang mengganjal di hati atau pikiran? Silakan sampaikan saja dengan diawali 'Tanya ki', insya Allah asisten kiai di sini siap membantu mengurainya dengan santai tapi tetap beradab.",
-                        "Wa'alaikum salam Wr. Wb. Ahlan wa sahlan! Wah, sapaannya mantap sekali. Daripada kita cuma berbalas salam, bagaimana kalau kita lanjut dengan diskusi ilmu? Ada yang ingin ditanyakan seputar fikih atau kehidupan beragama? Monggo, silakan tanya dengan diawali 'Tanya ki', jangan sungkan-sungkan ya!"
-                    ];
-                    finalResponse = salamReplies[Math.floor(Math.random() * salamReplies.length)];
-                }
-                else if (isGreeting) {
-                    // RULE: tambahkan jika diawali dengan / hallo / selamat {pagi/siang/sore/malam} / sapaan lain
-                    const greetingReplies = [
-                        "Halo! Senang sekali Anda mampir ke sini. Daripada kita cuma 'halo-halo' saja, yuk kita manfaatkan waktu untuk belajar agama. Silakan ajukan pertanyaan Anda dengan diawali kata 'Tanya ki' ya.",
-                        "Selamat juga untuk Anda! Masya Allah, semangat sekali ya hari ini. Ayo, mumpung lagi semangat, silakan ajukan pertanyaan atau konsultasi seputar keislaman dengan diawali 'Tanya ki'. Saya sudah siap dengan referensinya nih!",
-                        "Halo! 👋 Senang sekali Anda berkunjung ke 'Kiai Digital' hari ini. Di sini kita bisa ngobrol santai tapi tetap bermakna tentang berbagai hal seputar keislaman. Daripada hanya berbalas sapaan, bagaimana kalau langsung saja ajukan pertanyaan atau kemusykilan yang ada di benak Anda? Cukup awali dengan 'Tanya ki' dan saya akan bantu jawab sebaik mungkin. Monggo! 😊"
-                    ];
-                    finalResponse = greetingReplies[Math.floor(Math.random() * greetingReplies.length)];
-                }
-                else if (isTanyaKi) {
-                    // If trigger is found anywhere, use the whole message as the question
-                    // This allows messages like "Assalamu'alaikum kiai mau tanya..."
+                else if (category === 'GOOD') {
+                    // This is a substantial question
                     const question = text.trim();
-                    if (!question) return;
-
-                    // Use the common ki.ai system logic
-                    finalResponse = await kiAiService.askFullAnswer(
+                    const aiAnswer = await kiAiService.askFullAnswer(
                         question,
                         `wa-session-${chatId}`,
                         chatId,
                         payload.pushName || 'WhatsApp User'
                     );
+
+                    // Prepend greeting if detected
+                    let prefix = "";
+                    if (isSalam) {
+                        prefix = "Wa'alaikum salam Wr. Wb.\n\n";
+                    } else if (isGreeting) {
+                        prefix = "Halo! 👋\n\n";
+                    }
+
+                    finalResponse = prefix + aiAnswer;
+                }
+                else if (category === 'GREETING') {
+                    const salamReplies = [
+                        "Wa'alaikum salam Wr. Wb. Masya Allah, sapaan yang membawa kesejukan! Senang sekali bisa bersua dengan Anda di sini. Bagaimana kabarnya? Adakah kemusykilan agama yang sedang mengganjal di hati atau pikiran? Silakan sampaikan saja pertanyaan Anda, insya Allah asisten kiai di sini siap membantu mengurainya dengan santai tapi tetap beradab.",
+                        "Wa'alaikum salam Wr. Wb. Ahlan wa sahlan! Wah, sapaannya mantap sekali. Daripada kita cuma berbalas salam, bagaimana kalau kita lanjut with diskusi ilmu? Ada yang ingin ditanyakan seputar fikih atau kehidupan beragama? Monggo, silakan tanya langsung saja, jangan sungkan-sungkan ya!"
+                    ];
+                    const greetingReplies = [
+                        "Halo! Senang sekali Anda mampir ke sini. Daripada kita cuma 'halo-halo' saja, yuk kita manfaatkan waktu untuk belajar agama. Silakan ajukan pertanyaan Anda ya.",
+                        "Selamat juga untuk Anda! Masya Allah, semangat sekali ya hari ini. Ayo, mumpung lagi semangat, silakan ajukan pertanyaan atau konsultasi seputar keislaman. Saya sudah siap dengan referensinya nih!",
+                        "Halo! 👋 Senang sekali Anda berkunjung ke 'Kiai Digital' hari ini. Di sini kita bisa ngobrol santai tapi tetap bermakna tentang berbagai hal seputar keislaman. Daripada hanya berbalas sapaan, bagaimana kalau langsung saja ajukan pertanyaan atau kemusykilan yang ada di benak Anda? Saya akan bantu jawab sebaik mungkin. Monggo! 😊"
+                    ];
+
+                    if (isSalam) {
+                        finalResponse = salamReplies[Math.floor(Math.random() * salamReplies.length)];
+                    } else {
+                        finalResponse = greetingReplies[Math.floor(Math.random() * greetingReplies.length)];
+                    }
+                }
+                else if (category === 'OFF_TOPIC') {
+                    finalResponse = "Terima kasih atas pertanyaannya. Namun, mohon maaf, saat ini saya khusus didesain untuk membantu menjawab konsultasi seputar keislaman, hukum syariah, dan pemikiran keagamaan. Untuk topik di luar hal tersebut, mungkin Anda bisa mencari referensi lain yang lebih sesuai. Mari kita diskusikan hal-hal yang berkaitan dengan keislaman di sini. 😊";
                 }
 
                 if (!finalResponse) {
