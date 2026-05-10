@@ -44,4 +44,4 @@ backend/node_modules/*
 backend/upload
 backend/prisma/dev.db
 backend/.env*
-
+backend/dist
