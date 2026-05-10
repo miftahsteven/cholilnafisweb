@@ -23,9 +23,9 @@ export class ExternalEngine {
     }
 
     try {
-      // Modify query to only search specified domains, prioritizing MUI news
-      const siteFilter = '(site:mui.or.id/baca/berita OR site:mui.or.id OR site:nu.or.id)';
-      const searchQuery = `${query} ${siteFilter}`;
+      // Modify query to prioritize MUI fatwas and news
+      const siteFilter = '(site:mui.or.id/baca/berita OR site:mui.or.id/category/fatwa OR site:mui.or.id OR site:nu.or.id)';
+      const searchQuery = `fatwa ${query} ${siteFilter}`;
 
       // Memanggil Apify Actor 'apify/google-search-scraper'
       // Dokumentasi: https://apify.com/apify/google-search-scraper

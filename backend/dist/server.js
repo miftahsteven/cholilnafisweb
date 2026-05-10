@@ -21,6 +21,8 @@ const chatbot_route_1 = require("./routes/chatbot.route");
 const works_route_1 = require("./routes/works.route");
 const auth_route_1 = require("./routes/auth.route");
 const karya_route_1 = require("./routes/karya.route");
+const ki_ai_route_1 = require("./routes/ki-ai.route");
+const wa_hooks_route_1 = require("./routes/wa-hooks.route");
 const prisma_1 = require("./lib/prisma");
 const server = (0, fastify_1.default)({ logger: true });
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3002').split(',');
@@ -69,6 +71,8 @@ async function bootstrap() {
     await server.register(works_route_1.worksRoutes, { prefix: '/api/works' });
     await server.register(auth_route_1.authRoutes, { prefix: '/api/auth' });
     await server.register(karya_route_1.karyaRoutes, { prefix: '/api/karya' });
+    await server.register(ki_ai_route_1.kiAiRoutes, { prefix: '/api/admin/ki-ai' });
+    await server.register(wa_hooks_route_1.waHooksRoutes, { prefix: '/api/wa-hooks' });
     // ── Health check ───────────────────────────
     server.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
     try {

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateKaryaSchema = exports.CreateKaryaSchema = exports.UpdateMediaSchema = exports.ChatbotAskSchema = exports.CreateWorkSchema = exports.UpdateSettingSchema = exports.CreateBlockSchema = exports.UpdatePostSchema = exports.CreatePostSchema = void 0;
+exports.UpdateKiAiKnowledgeSchema = exports.CreateKiAiKnowledgeSchema = exports.UpdateKaryaSchema = exports.CreateKaryaSchema = exports.UpdateMediaSchema = exports.ChatbotAskSchema = exports.CreateWorkSchema = exports.UpdateSettingSchema = exports.CreateBlockSchema = exports.UpdatePostSchema = exports.CreatePostSchema = void 0;
 const zod_1 = require("zod");
 // ── POSTS ──────────────────────────────────────────────────────
 exports.CreatePostSchema = zod_1.z.object({
@@ -64,3 +64,17 @@ exports.CreateKaryaSchema = zod_1.z.object({
     status: zod_1.z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).default('DRAFT'),
 });
 exports.UpdateKaryaSchema = exports.CreateKaryaSchema.partial();
+// ── KI-AI KNOWLEDGE ─────────────────────────────────────────────
+exports.CreateKiAiKnowledgeSchema = zod_1.z.object({
+    category: zod_1.z.string().min(1),
+    title: zod_1.z.string().optional(),
+    description: zod_1.z.string().optional(),
+    content: zod_1.z.string().min(1),
+    keywords: zod_1.z.string().optional(),
+    status: zod_1.z.enum(['DRAFT', 'PUBLISHED']).default('PUBLISHED'),
+    sharing: zod_1.z.enum(['PUBLIC', 'INTERNAL']).default('PUBLIC'),
+    author: zod_1.z.string().optional().default('K.H. Cholil Nafis'),
+    sourceLink: zod_1.z.string().optional().or(zod_1.z.literal('')),
+    metadata: zod_1.z.record(zod_1.z.any()).optional(),
+});
+exports.UpdateKiAiKnowledgeSchema = exports.CreateKiAiKnowledgeSchema.partial();
