@@ -22,9 +22,12 @@ export class KnowledgeEngine {
         title, 
         content,
         "sourceLink" as "sourceUrl",
-        ts_rank(to_tsvector('simple', content), websearch_to_tsquery('simple', ${query})) as score
+        ts_rank(
+          to_tsvector('simple', coalesce(title, '') || ' ' || content || ' ' || coalesce(keywords, '')), 
+          websearch_to_tsquery('simple', ${query})
+        ) as score
       FROM ki_ai_knowledge
-      WHERE to_tsvector('simple', content) @@ websearch_to_tsquery('simple', ${query})
+      WHERE to_tsvector('simple', coalesce(title, '') || ' ' || content || ' ' || coalesce(keywords, '')) @@ websearch_to_tsquery('simple', ${query})
         AND status = 'PUBLISHED'
       ORDER BY score DESC
       LIMIT ${limit}

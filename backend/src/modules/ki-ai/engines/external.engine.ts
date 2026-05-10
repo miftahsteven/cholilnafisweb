@@ -23,8 +23,8 @@ export class ExternalEngine {
     }
 
     try {
-      // Modify query to only search specified domains
-      const siteFilter = '(site:mui.or.id OR site:nu.or.id)';
+      // Modify query to only search specified domains, prioritizing MUI news
+      const siteFilter = '(site:mui.or.id/baca/berita OR site:mui.or.id OR site:nu.or.id)';
       const searchQuery = `${query} ${siteFilter}`;
 
       // Memanggil Apify Actor 'apify/google-search-scraper'

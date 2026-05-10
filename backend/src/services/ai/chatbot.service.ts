@@ -1,27 +1,30 @@
 import { prisma } from '../../lib/prisma';
 import OpenAI from 'openai';
 import { detectPromptInjection, sanitizePlainText } from '../../middlewares/sanitize';
+import { knowledgeEngine } from '../../modules/ki-ai/engines/knowledge.engine';
+import { externalEngine } from '../../modules/ki-ai/engines/external.engine';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const SYSTEM_PROMPT = `
-Kamu adalah asisten virtual resmi KH. Muhammad Cholil Nafis — seorang ulama, 
-cendekiawan Muslim, dan akademisi terkemuka Indonesia.
+Anda adalah KI.AI, asisten virtual resmi K.H. Cholil Nafis — seorang ulama, 
+cendekiawan Muslim, dan akademisi terkemuka Indonesia yang selaras dengan Majelis Ulama Indonesia (MUI).
 
 Tugasmu adalah menjawab pertanyaan pengunjung seputar:
 - Profil dan riwayat beliau
 - Pandangan keislaman (fiqh, ushul fiqh, ekonomi syariah)
-- Berita dan kegiatan dakwah terkini
+- Berita dan kegiatan dakwah terkini (terutama dari MUI)
 - Karya tulis dan publikasi ilmiah
 
-ATURAN KETAT:
-1. Jawab HANYA berdasarkan konteks yang diberikan dalam tag [KONTEKS]. Jangan mengarang.
-2. Gunakan bahasa Indonesia yang sopan, santun, dan moderat.
-3. Hindari topik politik, sara, atau provokatif.
-4. Jika tidak yakin, katakan: "Untuk informasi lebih lanjut, silakan hubungi tim kami secara langsung."
-5. Jangan mengklaim kemampuan yang tidak dimiliki AI.
-6. Untuk pertanyaan fatwa hukum yang kompleks, sarankan konsultasi langsung dengan beliau.
-7. Maksimal jawaban 200 kata.
+ATURAN KETAT DAN PRIORITAS:
+1. PRIORITAS UTAMA: Gunakan data [KONTEKS INTERNAL] yang berisi pemikiran MURNI K.H. Cholil Nafis.
+2. PRIORITAS KEDUA: Gunakan data [KONTEKS EKSTERNAL] dari MUI atau NU. Dahulukan pandangan MUI untuk menjaga keselarasan.
+3. JANGAN JAWAB dari pengetahuan umum internet jika bertentangan dengan rujukan yang diberikan.
+4. Jawab dengan bahasa Indonesia yang sopan, santun, dan moderat (Wasathiyah).
+5. Hindari topik politik praktis, sara, atau provokatif.
+6. Jika tidak yakin atau tidak ada rujukan, katakan: "Untuk informasi lebih lanjut, silakan hubungi tim kami secara langsung."
+7. Jangan menyebutkan nama situs rujukan (seperti "mui.or.id") di dalam kalimat jawaban.
+8. Maksimal jawaban 300 kata.
 `.trim();
 
 /**
@@ -41,28 +44,39 @@ export async function generateEmbedding(text: string): Promise<number[]> {
  * For now, falls back to text-based keyword matching until pgvector is set up
  */
 async function retrieveRelevantContext(question: string): Promise<string> {
-  // Text-based fallback (replace with pgvector once enabled)
-  const allKnowledge = await prisma.knowledgeBase.findMany({
+  // 1. Get from Internal Knowledge (KiAiKnowledge)
+  const internalData = await knowledgeEngine.search(question, 5);
+  
+  // 2. Get from External Knowledge (MUI/NU)
+  const externalData = await externalEngine.search(question, 3);
+
+  // 3. Get from Legacy KnowledgeBase (Optional fallback)
+  const legacyKnowledge = await prisma.knowledgeBase.findMany({
     where: { active: true },
     select: { title: true, content: true },
-    take: 20,
+    take: 3,
   });
 
-  // Simple keyword match (replace with cosine similarity via pgvector)
-  const keywords = question.toLowerCase().split(' ').filter((w) => w.length > 3);
-  const scored = allKnowledge.map((kb: any) => {
-    const combined = `${kb.title} ${kb.content}`.toLowerCase();
-    const score = keywords.filter((kw) => combined.includes(kw)).length;
-    return { ...kb, score };
-  });
+  let context = '[KONTEKS INTERNAL]\n';
+  if (internalData.length > 0) {
+    context += internalData.map(d => `Judul: ${d.title}\nIsi: ${d.content}`).join('\n\n');
+  } else {
+    context += 'Tidak ada data internal spesifik.';
+  }
 
-  const top = scored
-    .sort((a: any, b: any) => b.score - a.score)
-    .slice(0, 5)
-    .filter((k: any) => k.score > 0);
+  context += '\n\n[KONTEKS EKSTERNAL (MUI/NU)]\n';
+  if (externalData.length > 0) {
+    context += externalData.map(d => `Judul: ${d.title}\nIsi: ${d.snippet}\nSumber: ${d.url}`).join('\n\n');
+  } else {
+    context += 'Tidak ada data eksternal spesifik.';
+  }
 
-  if (top.length === 0) return 'Tidak ada informasi yang relevan ditemukan.';
-  return top.map((k: any) => `${k.title}:\n${k.content}`).join('\n\n');
+  if (legacyKnowledge.length > 0) {
+    context += '\n\n[KONTEKS TAMBAHAN]\n';
+    context += legacyKnowledge.map(d => `${d.title}: ${d.content}`).join('\n\n');
+  }
+
+  return context;
 }
 
 interface ChatbotInput {
