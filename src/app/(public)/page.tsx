@@ -122,7 +122,7 @@ export default function PublicPage() {
           </p>
         </div>
 
-        <Chatbot />
+        <Chatbot whatsappStatus={process.env.NEXT_PUBLIC_WHATSAPP_KONSULTASI_BUTTON || 'disactive'} />
       </section>
 
       {/* Galeri Section */}
