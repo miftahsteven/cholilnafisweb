@@ -46,11 +46,11 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
-  await server.register(rateLimit, {
-    max: 2000,
-    timeWindow: '1 minute',
-    allowList: ['127.0.0.1', 'localhost', '::1', '::ffff:127.0.0.1'], // Bypass local SSG
-  });
+  // await server.register(rateLimit, {
+  //   max: 2000,
+  //   timeWindow: '1 minute',
+  //   allowList: ['127.0.0.1', 'localhost', '::1', '::ffff:127.0.0.1'], // Bypass local SSG
+  // });
 
   // ── File upload support ────────────────────
   await server.register(multipart, {

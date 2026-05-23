@@ -42,7 +42,7 @@ export default function Chatbot({ whatsappStatus }: ChatbotProps) {
   const [dailyUsage, setDailyUsage] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState<string>("");
-  //const [activeAgent, setActiveAgent] = useState<'general' | 'maktabah_syamilah'>('general');
+  const [activeAgent, setActiveAgent] = useState<'general' | 'maktabah_syamilah'>('general');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // ── Auth listener ──────────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ export default function Chatbot({ whatsappStatus }: ChatbotProps) {
         body: JSON.stringify({
           message: text,
           session_id: sessionId,
-          //agent: activeAgent,
+          agent: activeAgent,
           user_id: user.uid,
           user_name: user.displayName,
           user_email: user.email,
@@ -342,12 +342,10 @@ export default function Chatbot({ whatsappStatus }: ChatbotProps) {
               />
             </div>
             <div className="kiai-header-info">
-              <span className="kiai-name">ki.ai</span>
-              <span className="kiai-online">Online · Berbasis pemikiran Ust. Cholil Nafis</span>
-              {/* <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="kiai-name">ki.ai</span>
-                <select 
-                  value={activeAgent} 
+                <select
+                  value={activeAgent}
                   onChange={(e) => setActiveAgent(e.target.value as any)}
                   style={{
                     fontSize: '12px',
@@ -363,8 +361,8 @@ export default function Chatbot({ whatsappStatus }: ChatbotProps) {
                   <option value="general">Umum</option>
                   <option value="maktabah_syamilah">Maktabah Syamilah</option>
                 </select>
-              </div> */}
-              {/* <span className="kiai-online">Online · {activeAgent === 'maktabah_syamilah' ? 'Berbasis Kitab Kuning' : 'Berbasis pemikiran Ust. Cholil Nafis'}</span> */}
+              </div>
+              <span className="kiai-online">Online · {activeAgent === 'maktabah_syamilah' ? 'Berbasis Kitab Kuning' : 'Berbasis pemikiran Ust. Cholil Nafis'}</span>
             </div>
           </div>
           <div className="kiai-header-right">

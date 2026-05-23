@@ -127,11 +127,28 @@ model Media {
   @@map("media")
 }
 
+model ChatSession {
+  id              String   @id @default(cuid())
+  userId          String?
+  channel         String   @default("web")
+  channelUserId   String?
+  activeAgent     String   @default("general")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  logs            ChatLog[]
+
+  @@map("chat_sessions")
+}
+
 model ChatLog {
   id         String       @id @default(cuid())
-  sessionId  String
+  sessionId  String?
+  channel    String       @default("web")
+  agent      String       @default("general")
   question   String
   answer     String
+  language   String?
   intent     String?
   ipHash     String?
   tokens     Int?
@@ -144,16 +161,25 @@ model ChatLog {
   sources    ChatSource[]
   feedbacks  Feedback?
 
+  session    ChatSession? @relation(fields: [sessionId], references: [id])
+
   @@map("chat_logs")
 }
 
 model ChatSource {
-  id         String  @id @default(cuid())
-  chatId     String
-  sourceType String
-  sourceUrl  String?
-  title      String?
-  chat       ChatLog @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  id          String  @id @default(cuid())
+  chatId      String
+  sourceType  String
+  sourceUrl   String?
+  title       String?
+  author      String?
+  chapter     String?
+  page        Int?
+  volume      Int?
+  excerpt     String?
+  referenceId String?
+  metadata    Json?
+  chat        ChatLog @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@map("chat_sources")
 }

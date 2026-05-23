@@ -1,16 +1,15 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { kiAiService } from './ki-ai.service';
-import { knowledgeEngine, InternalKnowledgeResult } from './engines/knowledge.engine';
-import { externalEngine, ExternalKnowledgeResult } from './engines/external.engine';
-import { decisionEngine } from './engines/decision.engine';
-import { llmEngine } from './engines/llm.engine';
 import { moderationEngine } from './engines/moderation.engine';
+import { agentRouter } from './core/agent-router.service';
+import { AgentRouteInput } from './core/types';
 import { prisma } from '../../lib/prisma';
 import { z } from 'zod';
 
 const ChatRequestSchema = z.object({
   message: z.string().min(1),
   session_id: z.string(),
+  agent: z.enum(['general', 'maktabah_syamilah']).optional(),
   user_id: z.string().optional(),
   userId: z.string().optional(), // Fallback for camelCase
   user_name: z.string().optional(),
@@ -35,6 +34,7 @@ export class KiAiController {
       const {
         message,
         session_id,
+        agent,
         user_id,
         userId,
         user_name,
@@ -46,11 +46,32 @@ export class KiAiController {
       const final_user_id = user_id || userId;
       const final_user_name = user_name || userName;
       const final_user_email = user_email || userEmail;
+      const final_agent = agent || 'general';
+
+      // Ensure session exists or create it
+      let session = await prisma.chatSession.findUnique({ where: { id: session_id } });
+      if (!session) {
+        session = await prisma.chatSession.create({
+          data: {
+            id: session_id,
+            userId: final_user_id || null,
+            channel: 'web',
+            activeAgent: final_agent
+          }
+        });
+      } else if (session.activeAgent !== final_agent) {
+        session = await prisma.chatSession.update({
+          where: { id: session_id },
+          data: { activeAgent: final_agent }
+        });
+      }
 
       // FORCED LOGGING: Create initial log for audit
       const initialLog = await prisma.chatLog.create({
         data: {
-          sessionId: session_id,
+          sessionId: session.id,
+          channel: 'web',
+          agent: final_agent,
           userId: final_user_id || null,
           userName: final_user_name || null,
           userEmail: final_user_email || null,
@@ -197,71 +218,69 @@ export class KiAiController {
         }
       }
 
-      // 1. Search internal knowledge
-      const internalResults = await knowledgeEngine.search(message, 5);
+      // Use Agent Router
+      const agentInput: AgentRouteInput = {
+        message,
+        agent: final_agent as any,
+        channel: 'web',
+        sessionId: session_id,
+        userId: final_user_id,
+        userName: final_user_name,
+        userEmail: final_user_email
+      };
 
-      // 2. Decide Mode
-      const decision = decisionEngine.decideMode(internalResults);
-      const { mode, confidence } = decision;
-
-      // 3. Search external if needed
-      let externalResults: ExternalKnowledgeResult[] = [];
-      if (mode === 'hybrid' || mode === 'external') {
-        externalResults = await externalEngine.search(message, 3);
-      }
-
-      // 4. Build Sources Data for response
-      const sources = [
-        ...internalResults.map(r => ({ type: 'internal', title: r.title, url: r.sourceUrl || null })),
-        ...externalResults.map(r => ({ type: r.sourceType, title: r.title, url: r.url }))
-      ];
-
-      // Update log with finalized mode
-      await prisma.chatLog.update({
-        where: { id: initialLog.id },
-        data: { mode, confidence }
-      });
-
-      // Insert Sources
-      if (sources.length > 0) {
-        await prisma.chatSource.createMany({
-          data: sources.map(s => ({
-            chatId: initialLog.id,
-            sourceType: s.type,
-            sourceUrl: s.url,
-            title: s.title || null,
-          })),
-        });
-      }
-
-      // 5. Call LLM
-      const dalilKeywords = ['dalil', 'ayat', 'alquran', 'al-quran', 'hadis', 'hadist', 'sumber', 'teks arab', 'nas '];
-      const includeDalil = dalilKeywords.some(kw => message.toLowerCase().includes(kw));
-
-      const stream = await llmEngine.buildAndStreamPrompt(message, mode, internalResults, externalResults, includeDalil);
+      const stream = agentRouter.streamQuestion(agentInput);
 
       reply.raw.setHeader('Content-Type', 'text/event-stream');
       reply.raw.setHeader('Cache-Control', 'no-cache');
       reply.raw.setHeader('Connection', 'keep-alive');
 
       let fullAnswer = '';
+      let metadataReceived: any = null;
+
       for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || '';
-        if (content) {
+        if (chunk.type === 'metadata') {
+          metadataReceived = chunk.data;
+          
+          await prisma.chatLog.update({
+            where: { id: initialLog.id },
+            data: { mode: metadataReceived.mode, confidence: metadataReceived.confidence }
+          });
+          
+          if (metadataReceived.sources && metadataReceived.sources.length > 0) {
+            await prisma.chatSource.createMany({
+              data: metadataReceived.sources.map((s: any) => ({
+                chatId: initialLog.id,
+                sourceType: s.type,
+                sourceUrl: s.url || null,
+                title: s.title || null,
+                author: s.author || null,
+                chapter: s.chapter || null,
+                page: s.page || null,
+                volume: s.volume || null,
+                excerpt: s.excerpt || null,
+                referenceId: s.referenceId || null,
+              })),
+            });
+          }
+        } else if (chunk.type === 'chunk') {
+          const content = chunk.data;
           fullAnswer += content;
           reply.raw.write(`data: ${JSON.stringify({ text: content })}\n\n`);
         }
       }
 
       // Metadata at the end
-      reply.raw.write(`data: ${JSON.stringify({
-        metadata: {
-          mode,
-          sources,
-          confidence,
-          chat_id: initialLog.id
-        }
-      })}\n\n`);
+      if (metadataReceived) {
+        reply.raw.write(`data: ${JSON.stringify({
+          metadata: {
+            mode: metadataReceived.mode,
+            sources: metadataReceived.sources,
+            confidence: metadataReceived.confidence,
+            chat_id: initialLog.id
+          }
+        })}\n\n`);
+      }
 
       reply.raw.write('data: [DONE]\n\n');
       reply.raw.end();
