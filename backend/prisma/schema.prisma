@@ -155,6 +155,7 @@ model ChatLog {
   tokens     Int?
   createdAt  DateTime     @default(now())
   confidence Float?
+  donationAppeal String?
   mode       String?
   userId     String?
   userEmail  String?

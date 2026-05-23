@@ -12,11 +12,24 @@ export class MaktabahAgent implements KiAiAgent {
   async handle(input: AgentRouteInput): Promise<AgentRouteResult> {
     const { message, channel } = input;
     
-    // Simple normalization and query generation (could be LLM based in the future)
-    const normalizedQuery = message;
+    // Translate to Arabic keywords if needed
+    let arabicQuery = message;
+    try {
+      const keywordResponse = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You are an Arabic translator. Extract exactly 1-2 most important short Arabic root keywords from the user question to be used in a database search for classical Islamic books. Use broad terms. For example, for "hukum menikahi wanita hamil" use "نكاح حامل" or "زواج الحامل". Return ONLY the Arabic words separated by space. Do not use quotes or any other characters.' },
+          { role: 'user', content: message }
+        ],
+        temperature: 0.1,
+      });
+      arabicQuery = keywordResponse.choices[0]?.message?.content?.trim() || message;
+    } catch (e) {
+      console.error('Translation error:', e);
+    }
     
     // Search Maktabah Database
-    const searchResults = await maktabahRepository.search(normalizedQuery, 5);
+    const searchResults = await maktabahRepository.search(arabicQuery, 5);
     
     // Format Sources for LLM context and for Response
     const sources: ChatSourcePayload[] = searchResults.map(s => ({
@@ -67,7 +80,22 @@ export class MaktabahAgent implements KiAiAgent {
   async *stream(input: AgentRouteInput): AsyncGenerator<any, void, unknown> {
     const { message, channel } = input;
     
-    const searchResults = await maktabahRepository.search(message, 5);
+    let arabicQuery = message;
+    try {
+      const keywordResponse = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You are an Arabic translator. Extract exactly 1-2 most important short Arabic root keywords from the user question to be used in a database search for classical Islamic books. Use broad terms. For example, for "hukum menikahi wanita hamil" use "نكاح حامل" or "زواج الحامل". Return ONLY the Arabic words separated by space. Do not use quotes or any other characters.' },
+          { role: 'user', content: message }
+        ],
+        temperature: 0.1,
+      });
+      arabicQuery = keywordResponse.choices[0]?.message?.content?.trim() || message;
+    } catch (e) {
+      console.error('Translation error:', e);
+    }
+
+    const searchResults = await maktabahRepository.search(arabicQuery, 5);
     
     const sources: ChatSourcePayload[] = searchResults.map(s => ({
       type: 'maktabah_syamilah',
