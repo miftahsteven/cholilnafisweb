@@ -343,7 +343,7 @@ export default function Chatbot({ whatsappStatus }: ChatbotProps) {
             </div>
             <div className="kiai-header-info">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="kiai-name">ki.ai</span>
+                <span className="kiai-name">Ki.AI</span>
                 <select
                   value={activeAgent}
                   onChange={(e) => setActiveAgent(e.target.value as any)}
@@ -358,8 +358,8 @@ export default function Chatbot({ whatsappStatus }: ChatbotProps) {
                     outline: 'none'
                   }}
                 >
-                  <option value="general">Umum</option>
-                  <option value="maktabah_syamilah">Maktabah Syamilah</option>
+                  <option value="general">Keislaman Umum V4.3</option>
+                  <option value="maktabah_syamilah">Maktabah Syamilah V1.1B (BETA)</option>
                 </select>
               </div>
               <span className="kiai-online">Online · {activeAgent === 'maktabah_syamilah' ? 'Berbasis Kitab Kuning' : 'Berbasis pemikiran Ust. Cholil Nafis'}</span>

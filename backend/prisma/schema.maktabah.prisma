@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/maktabah"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_MAKTABAH")
+}
+
+model MaktabahBook {
+  id        Int       @id
+  title     String
+  titleAr   String?
+  author    String?
+  authorAr  String?
+  category  String?
+  source    String?
+  createdAt DateTime?
+  updatedAt DateTime?
+
+  chapters  MaktabahChapter[]
+  contents  MaktabahContent[]
+
+  @@map("maktabah_books")
+}
+
+model MaktabahChapter {
+  id      Int     @id
+  bookId  Int
+  title   String
+  titleAr String?
+  orderNo Int?
+
+  book     MaktabahBook      @relation(fields: [bookId], references: [id])
+  contents MaktabahContent[]
+
+  @@map("maktabah_chapters")
+}
+
+model MaktabahContent {
+  id          Int     @id
+  bookId      Int
+  chapterId   Int?
+  page        Int?
+  volume      Int?
+  contentAr   String
+  contentText String?
+  normalized  String?
+  searchText  String?
+
+  book    MaktabahBook     @relation(fields: [bookId], references: [id])
+  chapter MaktabahChapter? @relation(fields: [chapterId], references: [id])
+
+  @@map("maktabah_contents")
+}
