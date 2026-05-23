@@ -47,8 +47,9 @@ async function bootstrap() {
   });
 
   await server.register(rateLimit, {
-    max: 100,
+    max: 2000,
     timeWindow: '1 minute',
+    allowList: ['127.0.0.1', 'localhost', '::1', '::ffff:127.0.0.1'], // Bypass local SSG
   });
 
   // ── File upload support ────────────────────
