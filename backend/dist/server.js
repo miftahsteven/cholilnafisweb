@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fastify_1 = __importDefault(require("fastify"));
 const cors_1 = __importDefault(require("@fastify/cors"));
 const helmet_1 = __importDefault(require("@fastify/helmet"));
-const rate_limit_1 = __importDefault(require("@fastify/rate-limit"));
 const multipart_1 = __importDefault(require("@fastify/multipart"));
 const static_1 = __importDefault(require("@fastify/static"));
 const path_1 = __importDefault(require("path"));
@@ -45,10 +44,11 @@ async function bootstrap() {
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     });
-    await server.register(rate_limit_1.default, {
-        max: 100,
-        timeWindow: '1 minute',
-    });
+    // await server.register(rateLimit, {
+    //   max: 2000,
+    //   timeWindow: '1 minute',
+    //   allowList: ['127.0.0.1', 'localhost', '::1', '::ffff:127.0.0.1'], // Bypass local SSG
+    // });
     // ── File upload support ────────────────────
     await server.register(multipart_1.default, {
         limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
