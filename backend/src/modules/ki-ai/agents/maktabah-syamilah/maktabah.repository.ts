@@ -103,7 +103,7 @@ export class MaktabahRepository {
           volume: record.volume ? Number(record.volume) : undefined,
           excerpt: record.contentAr,
           score: 1.0 - (index * 0.1),
-          url: `https://shamela.ws/book/${bookCode}`
+          url: null
         };
       }));
 
