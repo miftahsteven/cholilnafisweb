@@ -67,82 +67,77 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
                 await new Promise(resolve => setTimeout(resolve, 5000));
 
                 let finalResponse = '';
+                const sessionId = `wa-session-${chatId}`;
 
-                const category = await moderationEngine.classifyMessage(text);
-                console.log(`[WA-HOOKS] Moderation result: ${category}`);
-
-                // RULE: jika ada pertanyaan atau sapaan yang mengandung unsur tidak sopan...
-                if (category === 'BAD') {
-                    finalResponse = "Mohon maaf sebelumnya, kami ingin mengingatkan bahwa seluruh riwayat percakapan Anda tersimpan dalam sistem kami. Kami sangat menghargai niat baik Anda untuk berkonsultasi, namun mohon untuk tetap menjaga adab, sopan santun, dan etika dalam berkomunikasi di majelis ilmu digital ini. Mari kita gunakan ruang ini dengan cara yang elegan dan penuh keberkahan. Terima kasih.";
-                }
-                else if (category === 'GOOD') {
-                    // Handle Commands
-                    if (lowerText.startsWith('/maktabah') || lowerText.startsWith('/kitab')) {
-                        const sessionId = `wa-session-${chatId}`;
-                        let session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
-                        if (!session) {
-                            await prisma.chatSession.create({
-                                data: { id: sessionId, channel: 'whatsapp', channelUserId: chatId, activeAgent: 'maktabah_syamilah' }
-                            });
-                        } else {
-                            await prisma.chatSession.update({
-                                where: { id: sessionId },
-                                data: { activeAgent: 'maktabah_syamilah' }
-                            });
-                        }
-                        
-                        const question = text.replace(/^\/(maktabah|kitab)/i, '').trim();
-                        if (!question) {
-                            finalResponse = "📚 Mode Maktabah Syamilah aktif.\nSilakan ajukan pertanyaan tentang kitab, fiqih, tafsir, hadits, atau pembahasan Islam lainnya.";
-                            
-                            // Send response early
-                            const res = await fetch(`${WAHA_URL}/api/sendText`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-Api-Key': WAHA_API_KEY },
-                                body: JSON.stringify({ chatId: chatId, text: finalResponse, session: 'default' })
-                            });
-                            return;
-                        }
-                        // Proceed to question processing
+                // 1. Handle Commands FIRST before Moderation
+                if (lowerText.startsWith('/maktabah') || lowerText.startsWith('/kitab')) {
+                    let session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
+                    if (!session) {
+                        await prisma.chatSession.create({
+                            data: { id: sessionId, channel: 'whatsapp', channelUserId: chatId, activeAgent: 'maktabah_syamilah' }
+                        });
+                    } else {
+                        await prisma.chatSession.update({
+                            where: { id: sessionId },
+                            data: { activeAgent: 'maktabah_syamilah' }
+                        });
                     }
-                    else if (lowerText.startsWith('/umum') || lowerText.startsWith('/general')) {
-                        const sessionId = `wa-session-${chatId}`;
-                        let session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
-                        if (!session) {
-                            await prisma.chatSession.create({
-                                data: { id: sessionId, channel: 'whatsapp', channelUserId: chatId, activeAgent: 'general' }
-                            });
-                        } else {
-                            await prisma.chatSession.update({
-                                where: { id: sessionId },
-                                data: { activeAgent: 'general' }
-                            });
-                        }
+                    
+                    const question = text.replace(/^\/(maktabah|kitab)/i, '').trim();
+                    if (!question) {
+                        finalResponse = "📚 Mode Maktabah Syamilah aktif.\nSilakan ajukan pertanyaan tentang kitab, fiqih, tafsir, hadits, atau pembahasan Islam lainnya.";
                         
-                        finalResponse = "Mode KI.AI Umum aktif kembali.";
-                        const res = await fetch(`${WAHA_URL}/api/sendText`, {
+                        await fetch(`${WAHA_URL}/api/sendText`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-Api-Key': WAHA_API_KEY },
                             body: JSON.stringify({ chatId: chatId, text: finalResponse, session: 'default' })
                         });
                         return;
                     }
-
-                    // Proceed with asking the agent
-                    const question = (lowerText.startsWith('/maktabah') || lowerText.startsWith('/kitab')) 
-                        ? text.replace(/^\/(maktabah|kitab)/i, '').trim() 
-                        : text.trim();
-                        
-                    const sessionId = `wa-session-${chatId}`;
+                }
+                else if (lowerText.startsWith('/umum') || lowerText.startsWith('/general')) {
                     let session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
                     if (!session) {
-                        session = await prisma.chatSession.create({
+                        await prisma.chatSession.create({
                             data: { id: sessionId, channel: 'whatsapp', channelUserId: chatId, activeAgent: 'general' }
+                        });
+                    } else {
+                        await prisma.chatSession.update({
+                            where: { id: sessionId },
+                            data: { activeAgent: 'general' }
                         });
                     }
                     
-                    const activeAgent = session.activeAgent || 'general';
-                    
+                    finalResponse = "Mode KI.AI Umum aktif kembali.";
+                    await fetch(`${WAHA_URL}/api/sendText`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Api-Key': WAHA_API_KEY },
+                        body: JSON.stringify({ chatId: chatId, text: finalResponse, session: 'default' })
+                    });
+                    return;
+                }
+
+                // 2. Resolve Active Agent Session
+                let session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
+                if (!session) {
+                    session = await prisma.chatSession.create({
+                        data: { id: sessionId, channel: 'whatsapp', channelUserId: chatId, activeAgent: 'general' }
+                    });
+                }
+                const activeAgent = session.activeAgent || 'general';
+
+                const question = (lowerText.startsWith('/maktabah') || lowerText.startsWith('/kitab')) 
+                    ? text.replace(/^\/(maktabah|kitab)/i, '').trim() 
+                    : text.trim();
+
+                // 3. Moderate the substantive question
+                const category = await moderationEngine.classifyMessage(question);
+                console.log(`[WA-HOOKS] Moderation result for "${question}": ${category}`);
+
+                if (category === 'BAD') {
+                    finalResponse = "Mohon maaf sebelumnya, kami ingin mengingatkan bahwa seluruh riwayat percakapan Anda tersimpan dalam sistem kami. Kami sangat menghargai niat baik Anda untuk berkonsultasi, namun mohon untuk tetap menjaga adab, sopan santun, dan etika dalam berkomunikasi di majelis ilmu digital ini. Mari kita gunakan ruang ini dengan cara yang elegan dan penuh keberkahan. Terima kasih.";
+                }
+                else if (category === 'GOOD') {
                     const initialLog = await prisma.chatLog.create({
                         data: {
                             sessionId: sessionId,
@@ -169,7 +164,6 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
                     
                     let aiAnswer = result.answer;
                     
-                    // Format response for WA if Maktabah
                     if (activeAgent === 'maktabah_syamilah' && result.sources && result.sources.length > 0) {
                         const sourcesStr = result.sources.slice(0, 3).map((s: any, idx: number) => 
                             `${idx + 1}. ${s.title}\n   Penulis: ${s.author || '-'}\n   Bab: ${s.chapter || '-'}\n   Hal/Jilid: ${s.page || '-'}/${s.volume || '-'}`
@@ -178,7 +172,6 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
                         aiAnswer = `📚 Maktabah Syamilah\n\nJawaban:\n${aiAnswer}\n\nReferensi:\n${sourcesStr}`;
                     }
 
-                    // Save log to database
                     await prisma.chatLog.update({
                         where: { id: initialLog.id },
                         data: { 
@@ -205,7 +198,6 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
                         });
                     }
 
-                    // Prepend greeting if detected
                     let prefix = "";
                     if (isSalam) {
                         prefix = "Wa'alaikum salam Wr. Wb.\n\n";
