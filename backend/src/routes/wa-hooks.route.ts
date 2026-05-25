@@ -164,12 +164,19 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
                     
                     let aiAnswer = result.answer;
                     
-                    if (activeAgent === 'maktabah_syamilah' && result.sources && result.sources.length > 0) {
-                        const sourcesStr = result.sources.slice(0, 3).map((s: any, idx: number) => 
-                            `${idx + 1}. ${s.title}\n   Penulis: ${s.author || '-'}\n   Bab: ${s.chapter || '-'}\n   Hal/Jilid: ${s.page || '-'}/${s.volume || '-'}`
-                        ).join('\n\n');
+                    if (activeAgent === 'maktabah_syamilah') {
+                        if (result.sources && result.sources.length > 0) {
+                            const sourcesStr = result.sources.slice(0, 3).map((s: any, idx: number) => 
+                                `${idx + 1}. ${s.title}\n   Penulis: ${s.author || '-'}\n   Bab: ${s.chapter || '-'}\n   Hal/Jilid: ${s.page || '-'}/${s.volume || '-'}`
+                            ).join('\n\n');
+                            
+                            aiAnswer = `📚 Maktabah Syamilah\n\nJawaban:\n${aiAnswer}\n\nReferensi:\n${sourcesStr}`;
+                        } else {
+                            aiAnswer = `📚 Maktabah Syamilah\n\nJawaban:\n${aiAnswer}`;
+                        }
                         
-                        aiAnswer = `📚 Maktabah Syamilah\n\nJawaban:\n${aiAnswer}\n\nReferensi:\n${sourcesStr}`;
+                        // Selalu tambahkan petunjuk kembali ke mode umum di bagian paling bawah
+                        aiAnswer += `\n\n💡 *Tips:* Ketik */umum* untuk kembali ke mode konsultasi umum.`;
                     }
 
                     await prisma.chatLog.update({
