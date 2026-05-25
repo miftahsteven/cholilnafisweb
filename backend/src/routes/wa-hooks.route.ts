@@ -223,6 +223,9 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
                     } else {
                         finalResponse = greetingReplies[Math.floor(Math.random() * greetingReplies.length)];
                     }
+
+                    // Tambahkan petunjuk/tips penggunaan command
+                    finalResponse += "\n\n💡 *Tips Konsultasi:*\nKetik */maktabah* untuk berkonsultasi menggunakan Kitab Kuning (Maktabah Syamilah), atau ketik */umum* untuk kembali ke mode umum.";
                 }
                 else if (category === 'OFF_TOPIC') {
                     finalResponse = "Terima kasih atas pertanyaannya. Namun, mohon maaf, saat ini saya khusus didesain untuk membantu menjawab konsultasi seputar keislaman, hukum syariah, dan pemikiran keagamaan. Untuk topik di luar hal tersebut, mungkin Anda bisa mencari referensi lain yang lebih sesuai. Mari kita diskusikan hal-hal yang berkaitan dengan keislaman di sini. 😊";
