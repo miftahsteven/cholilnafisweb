@@ -18,12 +18,30 @@ export class MaktabahAgent implements KiAiAgent {
       const keywordResponse = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You are an Arabic translator. Extract exactly 1-2 most important short Arabic root keywords from the user question to be used in a database search for classical Islamic books. Use broad terms. For example, for "hukum menikahi wanita hamil" use "نكاح حامل" or "زواج الحامل". Return ONLY the Arabic words separated by space. Do not use quotes or any other characters.' },
+          { 
+            role: 'system', 
+            content: `You are an expert Islamic Jurisprudence (Feqh) scholar and Arabic lexicographer.
+Your job is to translate a modern Indonesian/English Islamic question into 2-3 classical Arabic search terms (roots or keywords) used in traditional Feqh books (e.g. Maktabah Syamilah).
+
+Rules:
+1. Map modern concepts to classical Feqh terminology:
+   - "paylater" / "kredit" -> "نسيئة" or "بيع الآجل" or "دين"
+   - "investasi saham" -> "شركة" or "مضاربة"
+   - "menikah" -> "نكاح" or "تزوج"
+   - "wanita hamil" -> "حامل" or "حوامل"
+   - "e-wallet" / "uang digital" -> "صرف" or "فلوس"
+   - "bunga bank" -> "ربا"
+2. Normalize the output: Do NOT include any harakat/diacritics, punctuation, or English letters.
+3. Provide ONLY the Arabic words separated by spaces. (e.g., "نكاح حامل" or "شركة مضاربة"). Do not use quotes or any other characters.`
+          },
           { role: 'user', content: message }
         ],
         temperature: 0.1,
       });
-      arabicQuery = keywordResponse.choices[0]?.message?.content?.trim() || message;
+      let cleanQuery = keywordResponse.choices[0]?.message?.content?.trim() || message;
+      // Remove any non-Arabic letters/spaces
+      cleanQuery = cleanQuery.replace(/[^\u0600-\u06FF\s]/g, '').trim();
+      arabicQuery = cleanQuery || message;
     } catch (e) {
       console.error('Translation error:', e);
     }
@@ -41,7 +59,7 @@ export class MaktabahAgent implements KiAiAgent {
       volume: s.volume,
       excerpt: s.excerpt,
       referenceId: s.id,
-      url: null // Maktabah references usually don't have URLs in this setup
+      url: s.url || null
     }));
 
     let contextText = searchResults.map((s, idx) => 
@@ -85,12 +103,30 @@ export class MaktabahAgent implements KiAiAgent {
       const keywordResponse = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You are an Arabic translator. Extract exactly 1-2 most important short Arabic root keywords from the user question to be used in a database search for classical Islamic books. Use broad terms. For example, for "hukum menikahi wanita hamil" use "نكاح حامل" or "زواج الحامل". Return ONLY the Arabic words separated by space. Do not use quotes or any other characters.' },
+          { 
+            role: 'system', 
+            content: `You are an expert Islamic Jurisprudence (Feqh) scholar and Arabic lexicographer.
+Your job is to translate a modern Indonesian/English Islamic question into 2-3 classical Arabic search terms (roots or keywords) used in traditional Feqh books (e.g. Maktabah Syamilah).
+
+Rules:
+1. Map modern concepts to classical Feqh terminology:
+   - "paylater" / "kredit" -> "نسيئة" or "بيع الآجل" or "دين"
+   - "investasi saham" -> "شركة" or "مضاربة"
+   - "menikah" -> "نكاح" or "تزوج"
+   - "wanita hamil" -> "حامل" or "حوامل"
+   - "e-wallet" / "uang digital" -> "صرف" or "فلوس"
+   - "bunga bank" -> "ربا"
+2. Normalize the output: Do NOT include any harakat/diacritics, punctuation, or English letters.
+3. Provide ONLY the Arabic words separated by spaces. (e.g., "نكاح حامل" or "شركة مضاربة"). Do not use quotes or any other characters.`
+          },
           { role: 'user', content: message }
         ],
         temperature: 0.1,
       });
-      arabicQuery = keywordResponse.choices[0]?.message?.content?.trim() || message;
+      let cleanQuery = keywordResponse.choices[0]?.message?.content?.trim() || message;
+      // Remove any non-Arabic letters/spaces
+      cleanQuery = cleanQuery.replace(/[^\u0600-\u06FF\s]/g, '').trim();
+      arabicQuery = cleanQuery || message;
     } catch (e) {
       console.error('Translation error:', e);
     }
@@ -106,7 +142,7 @@ export class MaktabahAgent implements KiAiAgent {
       volume: s.volume,
       excerpt: s.excerpt,
       referenceId: s.id,
-      url: null
+      url: s.url || null
     }));
 
     // Send metadata immediately

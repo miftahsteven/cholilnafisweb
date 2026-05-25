@@ -45,3 +45,4 @@ backend/upload
 backend/prisma/dev.db
 backend/.env*
 backend/dist
+backend/test*

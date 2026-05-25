@@ -9,6 +9,19 @@ export type MaktabahSource = {
   volume?: number;
   excerpt: string;
   score: number;
+  url?: string | null;
+};
+
+const MAKTABAH_BOOKS_MAP: Record<string, { title: string; author: string }> = {
+  '1350': { title: 'Al-Risala (الرسالة)', author: 'Imam Asy-Syafi\'i (الإمام الشافعي)' },
+  '4180': { title: 'Nayl al-Awtar (نيل الأوطار)', author: 'Imam Asy-Syaukani (الإمام الشوكاني)' },
+  '1299': { title: 'Tafsir Al-Bahr Al-Muhit (تفسير البحر المحيط)', author: 'Abu Hayyan al-Andalusi (أبو حيان الأندلسي)' },
+  '1340': { title: 'Durrat al-Tanzil wa Ghurrat al-Ta\'wil (درة التنزيل وغرة التأويل)', author: 'Al-Khatib al-Iskafi (الخطيب الإسكافي)' },
+  '1680': { title: 'Al-Tamhid fi \'Ilm al-Tajwid (التمهيد في علم التجويد)', author: 'Ibn al-Jazari (ابن الجزري)' },
+  '2749': { title: 'Ghurar al-Fawa\'id al-Majmu\'ah (غرر الفوائد المجموعة)', author: 'Abu Bakr al-Hazimi (أبو بكر الحازمي)' },
+  '9710': { title: 'Al-Durar al-Kaminah (الدرر الكامنة في أعيان المائة الثامنة)', author: 'Ibn Hajar al-Asqalani (ابن حجر العسقلاني)' },
+  '9730': { title: 'Al-\'Uluw li al-\'Aliyy al-Adhim (العلو للعلي العظيم)', author: 'Imam Adh-Dhahabi (الإمام الذهبي)' },
+  '9740': { title: 'Ghidza al-Albab Sharh Manzhumah al-Adab (غذاء الألباب في شرح منظومة الآداب)', author: 'Imam As-Safarini (الإمام السفاريني)' }
 };
 
 export class MaktabahRepository {
@@ -50,21 +63,51 @@ export class MaktabahRepository {
         `, ...exactMatchParams);
       }
 
-      return results.map((record: any, index: number) => {
+      const mappedResults = await Promise.all(results.map(async (record: any, index: number) => {
         // Clean source_file from .csv
-        let bookName = record.source_file || 'Unknown Book';
-        bookName = bookName.replace('-book.csv', '');
+        let bookCode = record.source_file || 'Unknown Book';
+        bookCode = bookCode.replace('-book.csv', '');
+        
+        const bookInfo = MAKTABAH_BOOKS_MAP[bookCode] || {
+          title: `Kitab Maktabah (${bookCode})`,
+          author: '-'
+        };
+
+        // Find the chapter title dynamically from maktabah_title
+        let chapterName = '-';
+        try {
+          const titleFile = `${bookCode}-title.csv`;
+          const recordIdNum = Number(record.id);
+          if (!isNaN(recordIdNum)) {
+            const titleQuery: any[] = await prismaMaktabah.$queryRawUnsafe(`
+              SELECT tit FROM maktabah_title 
+              WHERE source_file = $1 AND id::integer <= $2
+              ORDER BY id::integer DESC
+              LIMIT 1
+            `, titleFile, recordIdNum);
+            
+            if (titleQuery.length > 0 && titleQuery[0].tit) {
+              chapterName = titleQuery[0].tit;
+            }
+          }
+        } catch (chapterErr) {
+          console.error('Chapter resolution error:', chapterErr);
+        }
+
         return {
           id: String(record.id),
-          bookTitle: `Kitab Maktabah (${bookName})`,
-          author: '-',
-          chapter: '-',
+          bookTitle: bookInfo.title,
+          author: bookInfo.author,
+          chapter: chapterName,
           page: record.page ? Number(record.page) : undefined,
           volume: record.volume ? Number(record.volume) : undefined,
           excerpt: record.contentAr,
-          score: 1.0 - (index * 0.1) // simple mock score based on order
+          score: 1.0 - (index * 0.1),
+          url: `https://shamela.ws/book/${bookCode}`
         };
-      });
+      }));
+
+      return mappedResults;
     } catch (e) {
       console.error('Maktabah Search Error:', e);
       return [];

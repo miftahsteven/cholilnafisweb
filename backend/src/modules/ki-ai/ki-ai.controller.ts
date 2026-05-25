@@ -253,9 +253,8 @@ export class KiAiController {
                 chatId: initialLog.id,
                 sourceType: s.type,
                 sourceUrl: s.url || null,
-                title: s.title || null,
+                title: s.chapter && s.chapter !== '-' ? `${s.title} - Bab: ${s.chapter}` : (s.title || null),
                 author: s.author || null,
-                chapter: s.chapter || null,
                 page: s.page || null,
                 volume: s.volume || null,
                 excerpt: s.excerpt || null,
@@ -294,7 +293,8 @@ export class KiAiController {
     } catch (error: any) {
       console.error('KI.AI Chat Error:', error);
       if (!reply.raw.headersSent) {
-        return reply.status(500).send({ error: 'Internal Server Error', details: error.message });
+        reply.status(500).send({ error: 'Internal Server Error', details: error.message });
+        return;
       } else {
         reply.raw.end();
       }

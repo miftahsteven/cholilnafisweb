@@ -460,7 +460,11 @@ export default function Chatbot({ whatsappStatus }: ChatbotProps) {
                           if (linkType === 'maktabah_syamilah') {
                             return (
                               <div key={idx} style={{ padding: '8px', borderLeft: '3px solid #10b981', backgroundColor: '#f0fdf4', marginBottom: '8px', fontSize: '13px', borderRadius: '4px', color: '#065f46' }}>
-                                <strong>Kitab:</strong> {src.title}<br />
+                                <strong>Kitab:</strong> {linkHref !== "#" ? (
+                                  <a href={linkHref} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: '#047857', fontWeight: 'bold' }}>
+                                    {src.title} ↗
+                                  </a>
+                                ) : src.title}<br />
                                 <strong>Penulis:</strong> {src.author || '-'}<br />
                                 <strong>Bab:</strong> {src.chapter || '-'}<br />
                                 <strong>Jilid/Hal:</strong> {src.volume || '-'}/{src.page || '-'}<br />
