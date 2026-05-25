@@ -13,14 +13,14 @@ export type MaktabahSource = {
 };
 
 const MAKTABAH_BOOKS_MAP: Record<string, { title: string; author: string }> = {
-  '1350': { title: 'Al-Risala (الرسالة)', author: 'Imam Asy-Syafi\'i (الإمام الشافعي)' },
-  '4180': { title: 'Nayl al-Awtar (نيل الأوطار)', author: 'Imam Asy-Syaukani (الإمام الشوكاني)' },
+  '1350': { title: 'Zad al-Masir fi \'Ilm al-Tafsir (زاد المسير في علم التفسير)', author: 'Ibn al-Jawzi (ابن الجوزي)' },
+  '4180': { title: 'Al-Adillah ar-Radiyyah Sharh al-Durar al-Bahiyyah (الأدلة الرضية لمتن الدرر البهية)', author: 'Imam Asy-Syaukani (الإمام الشوكاني)' },
   '1299': { title: 'Tafsir Al-Bahr Al-Muhit (تفسير البحر المحيط)', author: 'Abu Hayyan al-Andalusi (أبو حيان الأندلسي)' },
-  '1340': { title: 'Durrat al-Tanzil wa Ghurrat al-Ta\'wil (درة التنزيل وغرة التأويل)', author: 'Al-Khatib al-Iskafi (الخطيب الإسكافي)' },
-  '1680': { title: 'Al-Tamhid fi \'Ilm al-Tajwid (التمهيد في علم التجويد)', author: 'Ibn al-Jazari (ابن الجزري)' },
-  '2749': { title: 'Ghurar al-Fawa\'id al-Majmu\'ah (غرر الفوائد المجموعة)', author: 'Abu Bakr al-Hazimi (أبو بكر الحازمي)' },
-  '9710': { title: 'Al-Durar al-Kaminah (الدرر الكامنة في أعيان المائة الثامنة)', author: 'Ibn Hajar al-Asqalani (ابن حجر العسقلاني)' },
-  '9730': { title: 'Al-\'Uluw li al-\'Aliyy al-Adhim (العلو للعلي العظيم)', author: 'Imam Adh-Dhahabi (الإمام الذهبي)' },
+  '1340': { title: 'Tanwir al-Miqbas min Tafsir Ibn \'Abbas (تنوير المقباس من تفسير ابن عباس)', author: 'Ibn \'Abbas / Al-Fayruzabadi (ابن عباس / الفيروزآبادي)' },
+  '1680': { title: 'Hidayat al-Qari ila Tajwid Kalam al-Bari (هداية القاري إلى تجويد كلام الباري)', author: 'Abdul Fattah al-Marsafi (عبد الفتاح المرصفي)' },
+  '2749': { title: 'Al-Durar al-Muntathirah fi al-Ahadith al-Mushtaharah (الدرر المنتثرة في الأحاديث المشتهرة)', author: 'Jalaluddin al-Suyuthi (جلال الدين السيوطي)' },
+  '9710': { title: 'Gharib al-Qur\'an al-Musamma Nuzhat al-Qulub (غريب القرآن المسمى بنزهة القلوب)', author: 'Abu Bakr al-Sijistani (أبو بكر السجستاني)' },
+  '9730': { title: 'Itsbat Sifat al-\'Uluw (إثبات صفة العلو)', author: 'Ibn Qudamah al-Maqdisi (ابن قدامة المقدسي)' },
   '9740': { title: 'Ghidza al-Albab Sharh Manzhumah al-Adab (غذاء الألباب في شرح منظومة الآداب)', author: 'Imam As-Safarini (الإمام السفاريني)' }
 };
 
