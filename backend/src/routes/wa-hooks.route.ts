@@ -124,6 +124,20 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
                     session = await prisma.chatSession.create({
                         data: { id: sessionId, channel: 'whatsapp', channelUserId: chatId, activeAgent: 'general' }
                     });
+                } else {
+                    // Reset to 'general' if chat starts on a different calendar day (using GMT+7 / Asia/Jakarta timezone)
+                    const now = new Date();
+                    const lastUpdated = new Date(session.updatedAt);
+                    const nowDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(now);
+                    const lastDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(lastUpdated);
+
+                    if (nowDateStr !== lastDateStr && session.activeAgent !== 'general') {
+                        session = await prisma.chatSession.update({
+                            where: { id: sessionId },
+                            data: { activeAgent: 'general' }
+                        });
+                        console.log(`[WA-HOOKS] Session ${sessionId} reset to 'general' due to new calendar day (${lastDateStr} -> ${nowDateStr}).`);
+                    }
                 }
                 const activeAgent = session.activeAgent || 'general';
 
