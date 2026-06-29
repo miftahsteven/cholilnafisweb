@@ -18,6 +18,7 @@ const WAHA_API_KEY = process.env.WAHA_API_KEY || '320f901cb17b48559ed75279725725
 export async function waHooksRoutes(fastify: FastifyInstance) {
     fastify.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
         const body = request.body as any;
+        const wahaSession = body.session || 'default';
 
         // RULE: proses hanya event === "message"
         if (body.event !== 'message') {
@@ -90,7 +91,7 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
                         await fetch(`${WAHA_URL}/api/sendText`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-Api-Key': WAHA_API_KEY },
-                            body: JSON.stringify({ chatId: chatId, text: finalResponse, session: 'default' })
+                            body: JSON.stringify({ chatId: chatId, text: finalResponse, session: wahaSession })
                         });
                         return;
                     }
@@ -112,7 +113,7 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
                     await fetch(`${WAHA_URL}/api/sendText`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-Api-Key': WAHA_API_KEY },
-                        body: JSON.stringify({ chatId: chatId, text: finalResponse, session: 'default' })
+                        body: JSON.stringify({ chatId: chatId, text: finalResponse, session: wahaSession })
                     });
                     return;
                 }
@@ -255,7 +256,7 @@ export async function waHooksRoutes(fastify: FastifyInstance) {
                     body: JSON.stringify({
                         chatId: chatId,
                         text: finalResponse,
-                        session: 'default',
+                        session: wahaSession,
                         reply_to: 'ki.ai',
                         linkPreview: true,
                         linkPreviewHighQuality: false
